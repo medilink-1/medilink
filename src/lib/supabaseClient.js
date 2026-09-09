@@ -1,0 +1,14 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  // This warning shows up in the browser console, not a crash, so the
+  // rest of the app (marketing copy, etc.) still renders during setup.
+  console.warn(
+    'Supabase env vars are missing. Copy .env.example to .env and add your project URL + anon key.'
+  )
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
