@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse } from 'lucide-react'
+import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 const navItems = [
@@ -14,10 +14,12 @@ export default function Navbar() {
   const { user, profile, signOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
     await signOut()
+    setMobileOpen(false)
     navigate('/login')
   }
 
@@ -51,7 +53,15 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <button
+          aria-label="Open menu"
+          onClick={() => setMobileOpen((v) => !v)}
+          className="lg:hidden w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 shrink-0"
+        >
+          {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
+
+        <div className="hidden lg:flex items-center gap-2.5 shrink-0">
           <div className="relative">
             <button
               aria-label="Notifications"
@@ -121,6 +131,40 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {mobileOpen && (
+        <div className="lg:hidden border-t border-slate-100 px-6 py-4 flex flex-col gap-1 bg-white">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) =>
+                `py-2.5 text-[15px] font-medium ${isActive ? 'text-brand-700' : 'text-slate-600'}`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+          <div className="mt-2 pt-3 border-t border-slate-100 flex flex-col gap-1">
+            {user ? (
+              <>
+                <Link to="/profile" onClick={() => setMobileOpen(false)} className="py-2.5 text-[15px] font-medium text-slate-600">
+                  Patient Profile
+                </Link>
+                <button onClick={handleSignOut} className="flex items-center gap-2 py-2.5 text-[15px] font-medium text-slate-600">
+                  <LogOut size={15} /> Sign out
+                </button>
+              </>
+            ) : (
+              <Link to="/login" onClick={() => setMobileOpen(false)} className="py-2.5 text-[15px] font-semibold text-brand-600">
+                Sign in
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   )
 }

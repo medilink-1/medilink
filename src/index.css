@@ -23,3 +23,35 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Subtle finishing polish: shared card/button/input treatment */
+.border.border-slate-100.rounded-2xl {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.border.border-slate-100.rounded-2xl:hover {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+}
+
+.border-dashed.border-slate-200.rounded-2xl {
+  background-color: rgba(148, 163, 184, 0.04);
+}
+
+button.rounded-full.bg-brand-600,
+a.rounded-full.bg-brand-600 {
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+button.rounded-full.bg-brand-600:hover,
+a.rounded-full.bg-brand-600:hover {
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-brand-500) !important;
+  box-shadow: 0 0 0 3px var(--color-brand-100);
+}
