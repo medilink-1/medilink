@@ -16,10 +16,18 @@ export default function ClinicVisit() {
   const handleAdd = async (e) => {
     e.preventDefault()
     setSaving(true)
+    const visit_date = form.visit_date || new Date().toISOString().slice(0, 10)
     await supabase.from('clinic_visits').insert({
       ...form,
-      visit_date: form.visit_date || new Date().toISOString().slice(0, 10),
+      visit_date,
       user_id: user.id,
+    })
+    await supabase.from('timeline_events').insert({
+      user_id: user.id,
+      event_year: new Date(visit_date).getFullYear(),
+      title: `Clinic Visit — ${form.diagnosis || form.complaint || form.specialty || 'Consultation'}`,
+      category: 'clinic',
+      description: [form.doctor && `Dr. ${form.doctor}`, form.specialty].filter(Boolean).join(' · ') || null,
     })
     setSaving(false)
     setForm(emptyForm)

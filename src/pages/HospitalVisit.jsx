@@ -18,6 +18,13 @@ export default function HospitalVisit() {
     e.preventDefault()
     setSaving(true)
     await supabase.from('hospital_visits').insert({ ...form, user_id: user.id })
+    await supabase.from('timeline_events').insert({
+      user_id: user.id,
+      event_year: new Date(form.admission_date || Date.now()).getFullYear(),
+      title: `Hospital Admission — ${form.hospital_name}`,
+      category: 'hospital',
+      description: form.reason || form.diagnosis || null,
+    })
     setSaving(false)
     setForm(emptyForm)
     setShowForm(false)

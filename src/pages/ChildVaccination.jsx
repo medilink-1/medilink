@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { CheckCircle2, Clock, Loader2, Plus, UserRound } from 'lucide-react'
+import { CheckCircle2, Clock, Loader2, Plus, UserRound, Syringe } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { usePatientData } from '../lib/usePatientData'
+
+const emptyVaxForm = { vaccine_name: '', status: 'completed', event_date: '' }
 
 export default function ChildVaccination() {
   const { user } = useAuth()
@@ -12,6 +14,9 @@ export default function ChildVaccination() {
   const [age, setAge] = useState('')
   const [relationship, setRelationship] = useState('')
   const [saving, setSaving] = useState(false)
+  const [openVaxFor, setOpenVaxFor] = useState(null)
+  const [vaxForm, setVaxForm] = useState(emptyVaxForm)
+  const [vaxSaving, setVaxSaving] = useState(false)
 
   const handleAddDependent = async (e) => {
     e.preventDefault()
@@ -20,6 +25,22 @@ export default function ChildVaccination() {
     setSaving(false)
     setName(''); setAge(''); setRelationship('')
     setShowForm(false)
+    p.reload()
+  }
+
+  const handleAddVaccination = async (e, dependentId) => {
+    e.preventDefault()
+    setVaxSaving(true)
+    await supabase.from('vaccinations').insert({
+      user_id: user.id,
+      dependent_id: dependentId,
+      vaccine_name: vaxForm.vaccine_name,
+      status: vaxForm.status || 'completed',
+      event_date: vaxForm.event_date || new Date().toISOString().slice(0, 10),
+    })
+    setVaxSaving(false)
+    setVaxForm(emptyVaxForm)
+    setOpenVaxFor(null)
     p.reload()
   }
 
@@ -95,6 +116,32 @@ export default function ChildVaccination() {
                   ))}
                   {vax.length === 0 && <p className="text-sm text-slate-400">No vaccination records yet.</p>}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => { setOpenVaxFor(openVaxFor === dep.id ? null : dep.id); setVaxForm(emptyVaxForm) }}
+                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
+                >
+                  <Syringe size={14} /> Add Vaccination
+                </button>
+
+                {openVaxFor === dep.id && (
+                  <form onSubmit={(e) => handleAddVaccination(e, dep.id)} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-3 gap-3">
+                    <input required placeholder="Vaccine name" value={vaxForm.vaccine_name} onChange={(e) => setVaxForm({ ...vaxForm, vaccine_name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm sm:col-span-2" />
+                    <input type="date" value={vaxForm.event_date} onChange={(e) => setVaxForm({ ...vaxForm, event_date: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                    <select value={vaxForm.status} onChange={(e) => setVaxForm({ ...vaxForm, status: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white sm:col-span-3">
+                      <option value="completed">Completed</option>
+                      <option value="due_soon">Due Soon</option>
+                      <option value="scheduled">Scheduled</option>
+                    </select>
+                    <div className="sm:col-span-3 flex gap-3">
+                      <button type="submit" disabled={vaxSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
+                        {vaxSaving ? 'Saving…' : 'Save'}
+                      </button>
+                      <button type="button" onClick={() => setOpenVaxFor(null)} className="text-slate-500 text-sm font-medium px-5 py-2">Cancel</button>
+                    </div>
+                  </form>
+                )}
               </div>
             )
           })

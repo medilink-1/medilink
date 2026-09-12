@@ -13,6 +13,7 @@ const navItems = [
 export default function Navbar() {
   const { user, profile, signOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
@@ -51,12 +52,21 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            aria-label="Notifications"
-            className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-600 hover:border-brand-200 transition-colors"
-          >
-            <Bell size={17} />
-          </button>
+          <div className="relative">
+            <button
+              aria-label="Notifications"
+              onClick={() => setNotifOpen((v) => !v)}
+              className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-600 hover:border-brand-200 transition-colors"
+            >
+              <Bell size={17} />
+            </button>
+            {notifOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-100 rounded-xl shadow-lg py-3 px-4">
+                <p className="text-sm font-semibold text-ink-900">Notifications</p>
+                <p className="mt-1 text-sm text-slate-400">No new notifications.</p>
+              </div>
+            )}
+          </div>
           <Link
             to="/about"
             aria-label="Help"

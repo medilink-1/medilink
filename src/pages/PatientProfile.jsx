@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, Phone, Loader2, Pencil, X, Check } from 'lucide-react'
+import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus } from 'lucide-react'
 import { usePatientData } from '../lib/usePatientData'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
@@ -15,6 +15,9 @@ export default function PatientProfile() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState(null)
+  const [showMedForm, setShowMedForm] = useState(false)
+  const [medForm, setMedForm] = useState({ name: '', dose: '', frequency: '', duration: '', status: 'active' })
+  const [medSaving, setMedSaving] = useState(false)
 
   function startEdit() {
     setForm({
@@ -62,6 +65,23 @@ export default function PatientProfile() {
     await refreshProfile()
     setEditing(false)
     setForm(null)
+  }
+
+  async function addMedication(e) {
+    e.preventDefault()
+    setMedSaving(true)
+    await supabase.from('medications').insert({
+      user_id: user.id,
+      name: medForm.name,
+      dose: medForm.dose || null,
+      frequency: medForm.frequency || null,
+      duration: medForm.duration || null,
+      status: medForm.status || 'active',
+    })
+    setMedSaving(false)
+    setMedForm({ name: '', dose: '', frequency: '', duration: '', status: 'active' })
+    setShowMedForm(false)
+    await p.reload()
   }
 
   if (p.loading) {
@@ -188,8 +208,36 @@ export default function PatientProfile() {
           </section>
 
           <section>
-            <h2 className="text-sm font-bold tracking-wide text-slate-400">CURRENT MEDICATIONS</h2>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <h2 className="text-sm font-bold tracking-wide text-slate-400">CURRENT MEDICATIONS</h2>
+              <button
+                type="button"
+                onClick={() => setShowMedForm((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+              >
+                <Plus size={14} /> Add Medication
+              </button>
+            </div>
+
+            {showMedForm && (
+              <form onSubmit={addMedication} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
+                <input required placeholder="Medicine name" value={medForm.name} onChange={(e) => setMedForm({ ...medForm, name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input placeholder="Dose (e.g. 500mg)" value={medForm.dose} onChange={(e) => setMedForm({ ...medForm, dose: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input placeholder="Frequency (e.g. Twice daily)" value={medForm.frequency} onChange={(e) => setMedForm({ ...medForm, frequency: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input placeholder="Duration (e.g. 7 days)" value={medForm.duration} onChange={(e) => setMedForm({ ...medForm, duration: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <div className="sm:col-span-2 flex gap-3">
+                  <button type="submit" disabled={medSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
+                    {medSaving ? 'Saving…' : 'Save medication'}
+                  </button>
+                  <button type="button" onClick={() => setShowMedForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">Cancel</button>
+                </div>
+              </form>
+            )}
+
             <div className="mt-3 overflow-x-auto">
+              {p.medications.length === 0 ? (
+                <p className="text-sm text-slate-400 py-4">No medications recorded yet.</p>
+              ) : (
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="text-left text-slate-400 border-b border-slate-100">
@@ -216,6 +264,7 @@ export default function PatientProfile() {
                   ))}
                 </tbody>
               </table>
+              )}
             </div>
           </section>
 
