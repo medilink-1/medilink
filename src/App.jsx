@@ -13,6 +13,7 @@ import ChildVaccination from './pages/ChildVaccination'
 import MedicalInsurance from './pages/MedicalInsurance'
 import HealthTimeline from './pages/HealthTimeline'
 import MedicationSafety from './pages/MedicationSafety'
+import SharedSummary from './pages/SharedSummary'
 import About from './pages/About'
 
 function Protected({ children }) {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/about" element={<About />} />
+          <Route path="/shared/:token" element={<SharedSummary />} />
 
           <Route path="/profile" element={<Protected><PatientProfile /></Protected>} />
           <Route path="/pharmacy" element={<Navigate to="/medication-safety" replace />} />

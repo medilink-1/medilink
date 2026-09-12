@@ -187,4 +187,21 @@ export const HI = {
   Other: 'अन्य',
   'Prefer not to say': 'बताना नहीं चाहते',
   'Loading patient profile…': 'मरीज़ प्रोफ़ाइल लोड हो रही है…',
+
+  // Patient Profile -- Share with a Doctor
+  'Share with a Doctor': 'डॉक्टर के साथ साझा करें',
+  'Create Share Link': 'साझा लिंक बनाएं',
+  'Expires in': 'समाप्ति अवधि',
+  '24 hours': '24 घंटे',
+  '7 days': '7 दिन',
+  '30 days': '30 दिन',
+  'Label (optional, e.g. Dr. Sharma)': 'लेबल (वैकल्पिक, जैसे डॉ. शर्मा)',
+  'Create Link': 'लिंक बनाएं',
+  Copy: 'कॉपी करें',
+  'Copied!': 'कॉपी हो गया!',
+  Revoke: 'रद्द करें',
+  'No active share links.': 'कोई सक्रिय साझा लिंक नहीं है।',
+  Expires: 'समाप्ति',
+  'This creates a temporary, read-only link — anyone with the link can view a summary of your profile, allergies, conditions, and active medications without logging in. Revoke it any time.':
+    'यह एक अस्थायी, केवल-पढ़ने योग्य लिंक बनाता है — जिसके पास यह लिंक है वह बिना लॉग इन किए आपकी प्रोफ़ाइल, एलर्जी, स्थितियों और सक्रिय दवाओं का सारांश देख सकता है। इसे कभी भी रद्द किया जा सकता है।',
 }

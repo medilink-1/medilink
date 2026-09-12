@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2 } from 'lucide-react'
+import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2, Share2, Copy, Clock } from 'lucide-react'
 import { usePatientData } from '../lib/usePatientData'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
@@ -32,10 +32,18 @@ export default function PatientProfile() {
   const [documents, setDocuments] = useState([])
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [shareLinks, setShareLinks] = useState([])
+  const [showShareForm, setShowShareForm] = useState(false)
+  const [shareExpiry, setShareExpiry] = useState('24h')
+  const [shareLabel, setShareLabel] = useState('')
+  const [shareSaving, setShareSaving] = useState(false)
+  const [newShareUrl, setNewShareUrl] = useState('')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!user) return
     loadDocuments()
+    loadShareLinks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
@@ -90,6 +98,53 @@ export default function PatientProfile() {
     await supabase.storage.from('documents').remove([doc.storage_path])
     await supabase.from('documents').delete().eq('id', doc.id)
     await loadDocuments()
+  }
+
+  async function loadShareLinks() {
+    const { data } = await supabase
+      .from('share_links')
+      .select('*')
+      .eq('revoked', false)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+    setShareLinks(data || [])
+  }
+
+  async function handleCreateShareLink(e) {
+    e.preventDefault()
+    setShareSaving(true)
+    const token = crypto.randomUUID().replace(/-/g, '')
+    const hours = shareExpiry === '7d' ? 24 * 7 : shareExpiry === '30d' ? 24 * 30 : 24
+    const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString()
+    await supabase.from('share_links').insert({
+      user_id: user.id,
+      token,
+      label: shareLabel || null,
+      expires_at: expiresAt,
+    })
+    setShareSaving(false)
+    setShareLabel('')
+    setShowShareForm(false)
+    setNewShareUrl(`${window.location.origin}${import.meta.env.BASE_URL}shared/${token}`)
+    setCopied(false)
+    await loadShareLinks()
+  }
+
+  async function handleRevokeShareLink(link) {
+    if (!window.confirm('Revoke this share link? Anyone still holding it will lose access immediately.')) return
+    await supabase.from('share_links').update({ revoked: true }).eq('id', link.id)
+    if (newShareUrl.includes(link.token)) setNewShareUrl('')
+    await loadShareLinks()
+  }
+
+  async function copyShareUrl(url) {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard API unavailable -- the user can still select and copy the text manually
+    }
   }
 
   function startEdit() {
@@ -508,6 +563,96 @@ export default function PatientProfile() {
             <p className="mt-3 text-xs text-slate-400">
               {t('Files are stored privately in your account and are only ever accessible through short-lived, secure links.')}
             </p>
+          </section>
+
+          <section>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('Share with a Doctor')}</h2>
+              <button
+                type="button"
+                onClick={() => setShowShareForm((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+              >
+                <Share2 size={14} /> {t('Create Share Link')}
+              </button>
+            </div>
+
+            <p className="mt-2 text-xs text-slate-400">
+              {t('This creates a temporary, read-only link — anyone with the link can view a summary of your profile, allergies, conditions, and active medications without logging in. Revoke it any time.')}
+            </p>
+
+            {showShareForm && (
+              <form onSubmit={handleCreateShareLink} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-400">{t('Expires in')}</label>
+                  <select
+                    value={shareExpiry}
+                    onChange={(e) => setShareExpiry(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white"
+                  >
+                    <option value="24h">{t('24 hours')}</option>
+                    <option value="7d">{t('7 days')}</option>
+                    <option value="30d">{t('30 days')}</option>
+                  </select>
+                </div>
+                <input
+                  placeholder={t('Label (optional, e.g. Dr. Sharma)')}
+                  value={shareLabel}
+                  onChange={(e) => setShareLabel(e.target.value)}
+                  className="mt-1 sm:mt-6 rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+                />
+                <div className="sm:col-span-2 flex gap-3">
+                  <button type="submit" disabled={shareSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
+                    {shareSaving ? t('Saving…') : t('Create Link')}
+                  </button>
+                  <button type="button" onClick={() => setShowShareForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">{t('Cancel')}</button>
+                </div>
+              </form>
+            )}
+
+            {newShareUrl && (
+              <div className="mt-3 rounded-2xl border border-brand-100 bg-brand-50/60 p-4 flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-sm font-medium text-ink-900 break-all">{newShareUrl}</p>
+                <button
+                  type="button"
+                  onClick={() => copyShareUrl(newShareUrl)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white border border-slate-200 px-3 py-1.5 rounded-full shrink-0"
+                >
+                  <Copy size={13} /> {copied ? t('Copied!') : t('Copy')}
+                </button>
+              </div>
+            )}
+
+            <ul className="mt-3 flex flex-col gap-2">
+              {shareLinks.map((link) => (
+                <li key={link.id} className="flex items-center justify-between gap-3 border border-slate-100 rounded-2xl px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink-900 truncate">{link.label || t('Share with a Doctor')}</p>
+                    <p className="text-xs text-slate-400 flex items-center gap-1">
+                      <Clock size={12} /> {t('Expires')}: {new Date(link.expires_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => copyShareUrl(`${window.location.origin}${import.meta.env.BASE_URL}shared/${link.token}`)}
+                      className="p-2 text-slate-400 hover:text-brand-600"
+                      title={t('Copy')}
+                    >
+                      <Copy size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRevokeShareLink(link)}
+                      className="text-xs font-semibold text-red-600 hover:text-red-700 px-2"
+                    >
+                      {t('Revoke')}
+                    </button>
+                  </div>
+                </li>
+              ))}
+              {shareLinks.length === 0 && <p className="text-sm text-slate-400">{t('No active share links.')}</p>}
+            </ul>
           </section>
         </div>
 

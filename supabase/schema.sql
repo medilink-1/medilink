@@ -215,3 +215,88 @@ using (bucket_id = 'documents' and (storage.foldername(name))[1] = auth.uid()::t
 create policy "Users can delete their own documents"
 on storage.objects for delete
 using (bucket_id = 'documents' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- =========================================================
+-- 13. Shareable read-only health summary links
+--     Lets a patient generate a temporary, revocable link that shows
+--     a read-only health summary -- no MediLink account or login
+--     required to view it -- e.g. to hand to a treating doctor.
+--     Run this block once in the Supabase SQL editor to enable
+--     "Share with a Doctor" on the Patient Profile page.
+-- =========================================================
+create table if not exists share_links (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles (id) on delete cascade not null,
+  token text unique not null,
+  label text,
+  created_at timestamptz default now(),
+  expires_at timestamptz not null,
+  revoked boolean default false
+);
+
+alter table share_links enable row level security;
+
+-- Only the owning patient can see, create, or revoke their own share links.
+create policy "Own share links only" on share_links for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Security-definer function: this is the ONLY way an anonymous visitor
+-- (the doctor opening the link, with no MediLink account of their own)
+-- can read any patient data. It validates the token is not expired and
+-- not revoked, then returns a deliberately narrow, read-only summary --
+-- never raw table access, and nothing writable.
+create or replace function get_shared_health_summary(p_token text)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_link share_links%rowtype;
+  v_result json;
+begin
+  select * into v_link from share_links
+    where token = p_token and revoked = false and expires_at > now();
+
+  if not found then
+    return null;
+  end if;
+
+  select json_build_object(
+    'profile', (
+      select json_build_object(
+        'full_name', full_name,
+        'age', age,
+        'gender', gender,
+        'blood_group', blood_group,
+        'health_id', health_id,
+        'emergency_name', emergency_name,
+        'emergency_relation', emergency_relation,
+        'emergency_phone', emergency_phone
+      )
+      from profiles where id = v_link.user_id
+    ),
+    'allergies', (
+      select coalesce(json_agg(json_build_object('name', name, 'severity', severity)), '[]'::json)
+      from allergies where user_id = v_link.user_id
+    ),
+    'conditions', (
+      select coalesce(json_agg(json_build_object('name', name)), '[]'::json)
+      from conditions where user_id = v_link.user_id
+    ),
+    'medications', (
+      select coalesce(json_agg(json_build_object('name', name, 'dose', dose, 'frequency', frequency, 'status', status)), '[]'::json)
+      from medications where user_id = v_link.user_id and status = 'active'
+    ),
+    'label', v_link.label,
+    'expires_at', v_link.expires_at
+  ) into v_result;
+
+  return v_result;
+end;
+$$;
+
+-- Anyone (including an anonymous, logged-out visitor) may call this
+-- function -- it is the sole entry point, and it enforces its own
+-- token/expiry/revocation checks internally before returning anything.
+grant execute on function get_shared_health_summary(text) to anon, authenticated;
