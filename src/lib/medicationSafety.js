@@ -86,11 +86,11 @@ export function analyzeMedication(medicineName, context) {
     })
   }
 
-  // 4. Therapeutic duplication (demo: same drug class keyword clash)
+  // 4. Therapeutic duplication -- NOT actually implemented in this demo.
   checks.push({
     title: 'Therapeutic Duplication',
-    status: 'NO DUPLICATION IDENTIFIED',
-    result: 'No overlapping therapeutic class detected in demo data.',
+    status: 'NOT EVALUATED',
+    result: 'This prototype does not check therapeutic-class duplication yet. Treat as unassessed, not as a confirmed all-clear.',
   })
 
   // 5. Renal function review
@@ -118,18 +118,18 @@ export function analyzeMedication(medicineName, context) {
     })
   }
 
-  // 6. Hepatic function review (demo: always no alert, no LFTs modeled)
+  // 6. Hepatic function review -- NOT actually implemented in this demo.
   checks.push({
     title: 'Hepatic Function Review',
-    status: 'NO DEMO ALERT',
-    result: 'No hepatic function concerns modeled in this demo dataset.',
+    status: 'NOT EVALUATED',
+    result: 'This prototype does not model liver function tests. Treat as unassessed, not as a confirmed all-clear.',
   })
 
-  // 7. Previous ADR history (demo: static, no ADR history recorded)
+  // 7. Previous ADR history -- NOT actually implemented in this demo.
   checks.push({
     title: 'Previous ADR History',
-    status: 'NO ALERT',
-    result: 'No additional documented ADR history in demo data.',
+    status: 'NOT EVALUATED',
+    result: 'This prototype does not track prior adverse drug reactions. Treat as unassessed, not as a confirmed all-clear.',
   })
 
   const summaryMessage =

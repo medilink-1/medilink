@@ -300,7 +300,7 @@ export default function PatientProfile() {
 
           <section>
             <h2 className="text-sm font-bold tracking-wide text-slate-400">ADVERSE DRUG REACTION HISTORY</h2>
-            <p className="mt-3 text-sm text-slate-500">No additional documented ADR history in demo data.</p>
+            <p className="mt-3 text-sm text-slate-500">This prototype does not yet track ADR history — not evaluated, not a confirmed all-clear.</p>
           </section>
 
           <section>
