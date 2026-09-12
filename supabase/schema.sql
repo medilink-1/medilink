@@ -175,3 +175,43 @@ create policy "Own vaccinations only" on vaccinations for all using (auth.uid() 
 create policy "Own insurance policies only" on insurance_policies for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Own insurance claims only" on insurance_claims for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Own timeline events only" on timeline_events for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- =========================================================
+-- 12. Documents (uploaded lab reports, prescriptions, discharge
+--     papers, etc.) -- metadata table + Supabase Storage bucket.
+--     Run this block once in the Supabase SQL editor to enable
+--     file upload/download on the Patient Profile page.
+-- =========================================================
+create table if not exists documents (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles (id) on delete cascade not null,
+  file_name text not null,
+  storage_path text not null,
+  file_type text,
+  size_bytes bigint,
+  created_at timestamptz default now()
+);
+
+alter table documents enable row level security;
+
+create policy "Own documents only" on documents for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Private storage bucket -- files are only reachable via short-lived
+-- signed URLs generated for the owning user, never a public link.
+insert into storage.buckets (id, name, public)
+values ('documents', 'documents', false)
+on conflict (id) do nothing;
+
+-- Objects are stored at "<user_id>/<filename>", so folder segment 1
+-- of the object path must match the requesting user's own id.
+create policy "Users can upload their own documents"
+on storage.objects for insert
+with check (bucket_id = 'documents' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Users can view their own documents"
+on storage.objects for select
+using (bucket_id = 'documents' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Users can delete their own documents"
+on storage.objects for delete
+using (bucket_id = 'documents' and (storage.foldername(name))[1] = auth.uid()::text);

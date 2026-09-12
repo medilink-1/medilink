@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2 } from 'lucide-react'
 import { usePatientData } from '../lib/usePatientData'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
@@ -27,6 +27,68 @@ export default function PatientProfile() {
   const [showLabForm, setShowLabForm] = useState(false)
   const [labForm, setLabForm] = useState({ test_name: '', value: '', unit: '', recorded_at: '' })
   const [labSaving, setLabSaving] = useState(false)
+  const [documents, setDocuments] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+
+  useEffect(() => {
+    if (!user) return
+    loadDocuments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  async function loadDocuments() {
+    const { data } = await supabase
+      .from('documents')
+      .select('*')
+      .order('created_at', { ascending: false })
+    setDocuments(data || [])
+  }
+
+  async function handleUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setUploadError('')
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const storage_path = `${user.id}/${Date.now()}-${safeName}`
+    const { error: uploadErr } = await supabase.storage.from('documents').upload(storage_path, file)
+    if (uploadErr) {
+      setUploading(false)
+      setUploadError(
+        uploadErr.message?.includes('Bucket not found')
+          ? 'Document storage is not set up yet. Please contact support.'
+          : uploadErr.message
+      )
+      e.target.value = ''
+      return
+    }
+    await supabase.from('documents').insert({
+      user_id: user.id,
+      file_name: file.name,
+      storage_path,
+      file_type: file.type || null,
+      size_bytes: file.size,
+    })
+    setUploading(false)
+    e.target.value = ''
+    await loadDocuments()
+  }
+
+  async function handleDownload(doc) {
+    const { data, error: signErr } = await supabase.storage
+      .from('documents')
+      .createSignedUrl(doc.storage_path, 60)
+    if (signErr || !data?.signedUrl) return
+    window.open(data.signedUrl, '_blank', 'noopener')
+  }
+
+  async function handleDelete(doc) {
+    if (!window.confirm(`Delete "${doc.file_name}"? This cannot be undone.`)) return
+    await supabase.storage.from('documents').remove([doc.storage_path])
+    await supabase.from('documents').delete().eq('id', doc.id)
+    await loadDocuments()
+  }
 
   function startEdit() {
     setForm({
@@ -403,6 +465,48 @@ export default function PatientProfile() {
               {p.labResults.length === 0 && <p className="text-sm text-slate-400">No lab results recorded yet.</p>}
             </div>
           </section>
+
+          <section>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <h2 className="text-sm font-bold tracking-wide text-slate-400">DOCUMENTS &amp; REPORTS</h2>
+              <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 cursor-pointer">
+                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {uploading ? 'Uploading…' : 'Upload Document'}
+                <input type="file" className="hidden" onChange={handleUpload} disabled={uploading} />
+              </label>
+            </div>
+
+            {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+
+            <div className="mt-3 flex flex-col gap-2">
+              {documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between gap-3 border border-slate-100 rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <FileText size={16} className="text-slate-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-ink-900 truncate">{doc.file_name}</p>
+                      <p className="text-xs text-slate-400">
+                        {formatFileSize(doc.size_bytes)} · {new Date(doc.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button type="button" onClick={() => handleDownload(doc)} className="p-2 text-slate-400 hover:text-brand-600" title="Download">
+                      <Download size={16} />
+                    </button>
+                    <button type="button" onClick={() => handleDelete(doc)} className="p-2 text-slate-400 hover:text-red-600" title="Delete">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {documents.length === 0 && <p className="text-sm text-slate-400">No documents uploaded yet.</p>}
+            </div>
+
+            <p className="mt-3 text-xs text-slate-400">
+              Files are stored privately in your account and are only ever accessible through short-lived, secure links.
+            </p>
+          </section>
         </div>
 
         <div>
@@ -411,6 +515,13 @@ export default function PatientProfile() {
       </div>
     </div>
   )
+}
+
+function formatFileSize(bytes) {
+  if (bytes === null || bytes === undefined) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function Field({ label, value, icon: Icon }) {
