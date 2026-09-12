@@ -5,6 +5,7 @@ import {
   ClipboardCheck, ShieldAlert, Lightbulb,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { usePatientData } from '../lib/usePatientData'
 import SmartHealthCard from '../components/SmartHealthCard'
 import { analyzeMedication } from '../lib/medicationSafety'
@@ -43,6 +44,7 @@ const impactPoints = [
 
 export default function Home() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const patient = usePatientData()
 
   const activeMeds = patient.medications.filter((m) => m.status === 'active')
@@ -65,26 +67,25 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-6 pt-16 pb-20 grid lg:grid-cols-2 gap-16 items-center">
         <div>
           <h1 className="text-5xl sm:text-6xl font-extrabold leading-[1.05] text-ink-900">
-            Your Health. Connected.
+            {t('Your Health. Connected.')}
             <br />
-            Your Medication. <span className="text-brand-600">Safer.</span>
+            {t('Your Medication.')} <span className="text-brand-600">{t('Safer.')}</span>
           </h1>
           <p className="mt-6 text-lg text-slate-500 max-w-lg leading-relaxed">
-            One secure health ecosystem connecting your complete healthcare journey with
-            intelligent medication safety insights.
+            {t('One secure health ecosystem connecting your complete healthcare journey with intelligent medication safety insights.')}
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
               to={user ? '/profile' : '/signup'}
               className="inline-flex items-center gap-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3.5 rounded-full transition-colors"
             >
-              View My Health Profile <ChevronRight size={18} />
+              {t('View My Health Profile')} <ChevronRight size={18} />
             </Link>
             <Link
               to={user ? '/medication-safety' : '/signup'}
               className="inline-flex items-center border border-teal-200 text-teal-700 hover:bg-teal-50 font-semibold px-6 py-3.5 rounded-full transition-colors"
             >
-              Medication Safety Check
+              {t('Medication Safety Check')}
             </Link>
           </div>
         </div>
@@ -95,13 +96,12 @@ export default function Home() {
           ) : (
             <div className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-brand-700 via-brand-600 to-teal-600 text-white p-8 shadow-xl">
               <p className="text-sm font-extrabold tracking-widest">MEDILINK</p>
-              <p className="mt-6 text-xs uppercase tracking-wide text-white/70">Smart Health Card</p>
+              <p className="mt-6 text-xs uppercase tracking-wide text-white/70">{t('Smart Health Card')}</p>
               <p className="mt-1 text-lg text-white/90">
-                Sign in to see your patient identity, connected records and medication safety
-                intelligence.
+                {t('Sign in to see your patient identity, connected records and medication safety intelligence.')}
               </p>
               <Link to="/signup" className="mt-6 inline-block bg-white text-brand-700 font-semibold px-5 py-2.5 rounded-full text-sm">
-                Create your account
+                {t('Create your account')}
               </Link>
             </div>
           )}
@@ -111,7 +111,7 @@ export default function Home() {
       {/* SECTION 2: PATIENT QUICK OVERVIEW */}
       {user && patient.profile && (
         <section className="max-w-7xl mx-auto px-6 pb-20">
-          <h2 className="text-sm font-bold tracking-wide text-teal-700">PATIENT QUICK OVERVIEW</h2>
+          <h2 className="text-sm font-bold tracking-wide text-teal-700">{t('PATIENT QUICK OVERVIEW')}</h2>
           <div className="mt-4 rounded-3xl border border-slate-100 p-8 grid md:grid-cols-3 gap-8">
             <div>
               <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-xl font-bold">
@@ -126,12 +126,12 @@ export default function Home() {
 
             <div>
               <p className="text-xs font-bold text-red-600 flex items-center gap-1.5">
-                <AlertTriangle size={14} /> CRITICAL HEALTH INFORMATION
+                <AlertTriangle size={14} /> {t('CRITICAL HEALTH INFORMATION')}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {patient.allergies.map((a) => (
                   <span key={a.id} className="text-xs font-semibold bg-red-50 text-red-700 px-3 py-1.5 rounded-full">
-                    ⚠ {a.name} Allergy
+                    ⚠ {a.name} {t('Allergy')}
                   </span>
                 ))}
                 {patient.conditions.map((c) => (
@@ -143,7 +143,7 @@ export default function Home() {
             </div>
 
             <div>
-              <p className="text-xs font-bold text-slate-500">CURRENT MEDICATIONS</p>
+              <p className="text-xs font-bold text-slate-500">{t('CURRENT MEDICATIONS')}</p>
               <ul className="mt-3 flex flex-col gap-1.5">
                 {activeMeds.map((m) => (
                   <li key={m.id} className="text-sm text-ink-900 flex items-center gap-2">
@@ -158,8 +158,8 @@ export default function Home() {
 
       {/* SECTION 3: MY HEALTH ECOSYSTEM */}
       <section className="max-w-7xl mx-auto px-6 pb-20">
-        <h2 className="text-3xl font-extrabold text-ink-900">My Health Ecosystem</h2>
-        <p className="mt-2 text-slate-500">Everything about your health, connected in one place.</p>
+        <h2 className="text-3xl font-extrabold text-ink-900">{t('My Health Ecosystem')}</h2>
+        <p className="mt-2 text-slate-500">{t('Everything about your health, connected in one place.')}</p>
 
         <div className="mt-8 flex gap-5 overflow-x-auto pb-2 lg:grid lg:grid-cols-6 lg:overflow-visible">
           {ecosystemCards.map((card) => (
@@ -173,10 +173,10 @@ export default function Home() {
               <span className={`w-11 h-11 rounded-xl flex items-center justify-center ${card.highlight ? 'bg-teal-600 text-white' : 'bg-brand-50 text-brand-600'}`}>
                 <card.icon size={20} />
               </span>
-              <h3 className="mt-4 font-bold text-ink-900">{card.title}</h3>
-              <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">{card.desc}</p>
+              <h3 className="mt-4 font-bold text-ink-900">{t(card.title)}</h3>
+              <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">{t(card.desc)}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand-600">
-                Open <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                {t('Open')} <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
               </span>
             </Link>
           ))}
@@ -186,8 +186,8 @@ export default function Home() {
       {/* SECTION 4: HEALTH TIMELINE PREVIEW */}
       {user && timelinePreview.length > 0 && (
         <section className="max-w-4xl mx-auto px-6 pb-20">
-          <h2 className="text-3xl font-extrabold text-ink-900">My Health Timeline</h2>
-          <p className="mt-2 text-slate-500">A connected view of your healthcare journey.</p>
+          <h2 className="text-3xl font-extrabold text-ink-900">{t('My Health Timeline')}</h2>
+          <p className="mt-2 text-slate-500">{t('A connected view of your healthcare journey.')}</p>
 
           <div className="mt-8 relative pl-8 border-l-2 border-brand-100 flex flex-col gap-8">
             {timelinePreview.map((ev) => (
@@ -200,7 +200,7 @@ export default function Home() {
           </div>
 
           <Link to="/timeline" className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-brand-600">
-            View Complete Timeline <ChevronRight size={15} />
+            {t('View Complete Timeline')} <ChevronRight size={15} />
           </Link>
         </section>
       )}
@@ -208,9 +208,9 @@ export default function Home() {
       {/* SECTION 5: MEDICATION SAFETY INTELLIGENCE PREVIEW */}
       <section className="bg-slate-50/70 py-20">
         <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-3xl font-extrabold text-ink-900">Medication Safety Intelligence</h2>
+          <h2 className="text-3xl font-extrabold text-ink-900">{t('Medication Safety Intelligence')}</h2>
           <p className="mt-2 text-slate-500">
-            Transforming patient health information into actionable safety insights.
+            {t('Transforming patient health information into actionable safety insights.')}
           </p>
 
           {!user ? (
@@ -221,18 +221,18 @@ export default function Home() {
                     <Pill size={20} />
                   </span>
                   <div>
-                    <p className="text-xs font-bold text-slate-400">EXAMPLE: NEW MEDICATION</p>
+                    <p className="text-xs font-bold text-slate-400">{t('EXAMPLE: NEW MEDICATION')}</p>
                     <p className="text-xl font-bold text-ink-900">Amoxicillin</p>
                   </div>
                 </div>
 
-                <p className="mt-6 text-xs font-bold text-slate-400">SYSTEM SAFETY ANALYSIS</p>
+                <p className="mt-6 text-xs font-bold text-slate-400">{t('SYSTEM SAFETY ANALYSIS')}</p>
                 <ul className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
                   {[
                     'Drug–Drug Interaction Check', 'Drug–Disease Contraindication Check', 'Drug Allergy Check',
                   ].map((c) => (
                     <li key={c} className="flex items-center gap-2">
-                      <CheckCircle2 size={15} className="text-teal-600" /> {c}
+                      <CheckCircle2 size={15} className="text-teal-600" /> {t(c)}
                     </li>
                   ))}
                 </ul>
@@ -241,24 +241,22 @@ export default function Home() {
               <div className="flex flex-col">
                 <div className="rounded-2xl bg-red-50 border border-red-100 border-l-4 border-l-red-500 p-6">
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-red-600">
-                    <FileWarning size={14} /> High risk (example)
+                    <FileWarning size={14} /> {t('High risk (example)')}
                   </span>
-                  <p className="mt-2 font-semibold text-ink-900">Potential Allergy-Related Risk Detected</p>
+                  <p className="mt-2 font-semibold text-ink-900">{t('Potential Allergy-Related Risk Detected')}</p>
                   <p className="mt-2 text-sm text-slate-600">
-                    A patient with a documented Penicillin allergy would be flagged here before
-                    this medicine is prescribed or dispensed.
+                    {t('A patient with a documented Penicillin allergy would be flagged here before this medicine is prescribed or dispensed.')}
                   </p>
                 </div>
                 <Link
                   to="/signup"
                   className="mt-5 inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
                 >
-                  Create your account <ChevronRight size={16} />
+                  {t('Create your account')} <ChevronRight size={16} />
                 </Link>
-                <p className="mt-auto pt-6 text-xs font-bold text-slate-400">CLINICAL DECISION SUPPORT ONLY</p>
+                <p className="mt-auto pt-6 text-xs font-bold text-slate-400">{t('CLINICAL DECISION SUPPORT ONLY')}</p>
                 <p className="text-xs text-slate-400 mt-1">
-                  MediLink provides medication safety information to support healthcare professionals.
-                  It does not replace professional clinical judgment.
+                  {t('MediLink provides medication safety information to support healthcare professionals. It does not replace professional clinical judgment.')}
                 </p>
               </div>
             </div>
@@ -270,12 +268,12 @@ export default function Home() {
                     <Pill size={20} />
                   </span>
                   <div>
-                    <p className="text-xs font-bold text-slate-400">YOUR MOST RECENT MEDICATION</p>
+                    <p className="text-xs font-bold text-slate-400">{t('YOUR MOST RECENT MEDICATION')}</p>
                     <p className="text-xl font-bold text-ink-900">{previewReport.medicine}</p>
                   </div>
                 </div>
 
-                <p className="mt-6 text-xs font-bold text-slate-400">SYSTEM SAFETY ANALYSIS</p>
+                <p className="mt-6 text-xs font-bold text-slate-400">{t('SYSTEM SAFETY ANALYSIS')}</p>
                 <ul className="mt-3 flex flex-col gap-2">
                   {previewReport.checks.map((c) => {
                     const evaluated = c.status !== 'NOT EVALUATED'
@@ -283,11 +281,11 @@ export default function Home() {
                       <li key={c.title} className="flex items-center justify-between gap-3 text-sm">
                         <span className={`flex items-center gap-2 ${evaluated ? 'text-slate-600' : 'text-slate-400'}`}>
                           <CheckCircle2 size={15} className={evaluated ? 'text-teal-600' : 'text-slate-300'} />
-                          {c.title}
+                          {t(c.title)}
                         </span>
                         {!evaluated && (
                           <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full shrink-0">
-                            Not evaluated
+                            {t('Not evaluated')}
                           </span>
                         )}
                       </li>
@@ -299,7 +297,7 @@ export default function Home() {
               <div className="flex flex-col">
                 <div className={`rounded-2xl p-6 ${riskBannerStyles[previewReport.overallRisk]}`}>
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide">
-                    <FileWarning size={14} /> {previewReport.overallRisk} risk
+                    <FileWarning size={14} /> {t(previewReport.overallRisk)} {t('risk')}
                   </span>
                   <p className="mt-2 font-semibold leading-snug">{previewReport.summaryMessage}</p>
                 </div>
@@ -307,12 +305,11 @@ export default function Home() {
                   to="/medication-safety"
                   className="mt-5 inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
                 >
-                  View Full Analysis <ChevronRight size={16} />
+                  {t('View Full Analysis')} <ChevronRight size={16} />
                 </Link>
-                <p className="mt-auto pt-6 text-xs font-bold text-slate-400">CLINICAL DECISION SUPPORT ONLY</p>
+                <p className="mt-auto pt-6 text-xs font-bold text-slate-400">{t('CLINICAL DECISION SUPPORT ONLY')}</p>
                 <p className="text-xs text-slate-400 mt-1">
-                  MediLink provides medication safety information to support healthcare professionals.
-                  It does not replace professional clinical judgment.
+                  {t('MediLink provides medication safety information to support healthcare professionals. It does not replace professional clinical judgment.')}
                 </p>
               </div>
             </div>
@@ -321,16 +318,15 @@ export default function Home() {
               <span className="w-12 h-12 mx-auto rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
                 <Pill size={22} />
               </span>
-              <p className="mt-4 font-semibold text-ink-900">Add a medication to see your personalized safety analysis here.</p>
+              <p className="mt-4 font-semibold text-ink-900">{t('Add a medication to see your personalized safety analysis here.')}</p>
               <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
-                This section shows a live, patient-specific safety review the moment you add a
-                medication on your Patient Profile.
+                {t('This section shows a live, patient-specific safety review the moment you add a medication on your Patient Profile.')}
               </p>
               <Link
                 to="/medication-safety"
                 className="mt-5 inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
               >
-                Run a Safety Check <ChevronRight size={16} />
+                {t('Run a Safety Check')} <ChevronRight size={16} />
               </Link>
             </div>
           )}
@@ -339,15 +335,15 @@ export default function Home() {
 
       {/* SECTION 6: HOW MEDILINK WORKS */}
       <section className="max-w-5xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-extrabold text-ink-900 text-center">How MediLink Works</h2>
-        <p className="mt-2 text-slate-500 text-center">From your Smart Health ID to an informed clinical decision.</p>
+        <h2 className="text-3xl font-extrabold text-ink-900 text-center">{t('How MediLink Works')}</h2>
+        <p className="mt-2 text-slate-500 text-center">{t('From your Smart Health ID to an informed clinical decision.')}</p>
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {workflowSteps.map((step, i) => (
             <div key={step} className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5 flex flex-col gap-3">
               <span className="w-7 h-7 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">
                 {i + 1}
               </span>
-              <p className="font-semibold text-ink-900 text-sm leading-snug">{step}</p>
+              <p className="font-semibold text-ink-900 text-sm leading-snug">{t(step)}</p>
             </div>
           ))}
         </div>
@@ -356,9 +352,9 @@ export default function Home() {
       {/* SECTION 7: MEDILINK IMPACT */}
       <section className="bg-brand-700 text-white py-14">
         <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-3xl font-extrabold">The MediLink Impact</h2>
+          <h2 className="text-3xl font-extrabold">{t('The MediLink Impact')}</h2>
           <p className="mt-2 text-white/70 max-w-xl">
-            Practical outcomes for patients and the healthcare professionals treating them.
+            {t('Practical outcomes for patients and the healthcare professionals treating them.')}
           </p>
           <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {impactPoints.map((point) => (
@@ -369,7 +365,7 @@ export default function Home() {
                 <span className="w-9 h-9 rounded-full bg-teal-400/20 text-teal-300 flex items-center justify-center shrink-0">
                   <point.icon size={16} />
                 </span>
-                <span className="text-sm font-medium leading-snug">{point.text}</span>
+                <span className="text-sm font-medium leading-snug">{t(point.text)}</span>
               </div>
             ))}
           </div>

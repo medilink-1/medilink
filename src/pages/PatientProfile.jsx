@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2 } from 'lucide-react'
 import { usePatientData } from '../lib/usePatientData'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { supabase } from '../lib/supabaseClient'
 import SmartHealthCard from '../components/SmartHealthCard'
 
@@ -11,6 +12,7 @@ const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 export default function PatientProfile() {
   const p = usePatientData()
   const { user, refreshProfile } = useAuth()
+  const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -198,7 +200,7 @@ export default function PatientProfile() {
   if (p.loading) {
     return (
       <div className="max-w-5xl mx-auto px-6 py-20 flex items-center gap-2 text-slate-400">
-        <Loader2 className="animate-spin" size={18} /> Loading patient profile…
+        <Loader2 className="animate-spin" size={18} /> {t('Loading patient profile…')}
       </div>
     )
   }
@@ -207,15 +209,15 @@ export default function PatientProfile() {
     <div className="max-w-5xl mx-auto px-6 py-14">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-extrabold text-ink-900">Patient Health Profile</h1>
-          <p className="mt-2 text-slate-500">A unified view of essential patient health information.</p>
+          <h1 className="text-3xl font-extrabold text-ink-900">{t('Patient Health Profile')}</h1>
+          <p className="mt-2 text-slate-500">{t('A unified view of essential patient health information.')}</p>
         </div>
         {!editing && (
           <button
             onClick={startEdit}
             className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-ink-900 hover:bg-slate-50"
           >
-            <Pencil size={14} /> Edit Profile
+            <Pencil size={14} /> {t('Edit Profile')}
           </button>
         )}
       </div>
@@ -225,7 +227,7 @@ export default function PatientProfile() {
           {editing ? (
             <form onSubmit={saveEdit} className="flex flex-col gap-8">
               <section>
-                <h2 className="text-sm font-bold tracking-wide text-slate-400">PERSONAL INFORMATION</h2>
+                <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('PERSONAL INFORMATION')}</h2>
                 <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
                   <EditField label="Full name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
                   <EditField label="Age" type="number" value={form.age} onChange={(v) => setForm({ ...form, age: v })} />
@@ -236,7 +238,7 @@ export default function PatientProfile() {
               </section>
 
               <section>
-                <h2 className="text-sm font-bold tracking-wide text-slate-400">EMERGENCY INFORMATION</h2>
+                <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('EMERGENCY INFORMATION')}</h2>
                 <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
                   <EditField label="Emergency Contact" value={form.emergency_name} onChange={(v) => setForm({ ...form, emergency_name: v })} />
                   <EditField label="Relationship" value={form.emergency_relation} onChange={(v) => setForm({ ...form, emergency_relation: v })} />
@@ -252,21 +254,21 @@ export default function PatientProfile() {
                   disabled={saving}
                   className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-full"
                 >
-                  <Check size={15} /> {saving ? 'Saving…' : 'Save changes'}
+                  <Check size={15} /> {saving ? t('Saving…') : t('Save changes')}
                 </button>
                 <button
                   type="button"
                   onClick={cancelEdit}
                   className="inline-flex items-center gap-1.5 border border-slate-200 text-slate-600 font-medium px-5 py-2.5 rounded-full"
                 >
-                  <X size={15} /> Cancel
+                  <X size={15} /> {t('Cancel')}
                 </button>
               </div>
             </form>
           ) : (
             <>
               <section>
-                <h2 className="text-sm font-bold tracking-wide text-slate-400">PERSONAL INFORMATION</h2>
+                <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('PERSONAL INFORMATION')}</h2>
                 <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
                   <Field label="Name" value={p.profile?.full_name} />
                   <Field label="Age" value={p.profile?.age ? `${p.profile.age} Years` : null} />
@@ -277,7 +279,7 @@ export default function PatientProfile() {
               </section>
 
               <section>
-                <h2 className="text-sm font-bold tracking-wide text-slate-400">EMERGENCY INFORMATION</h2>
+                <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('EMERGENCY INFORMATION')}</h2>
                 <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
                   <Field label="Emergency Contact" value={p.profile?.emergency_name} />
                   <Field label="Relationship" value={p.profile?.emergency_relation} />
@@ -289,23 +291,23 @@ export default function PatientProfile() {
 
           <section>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h2 className="text-sm font-bold tracking-wide text-slate-400">MEDICAL CONDITIONS</h2>
+              <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('MEDICAL CONDITIONS')}</h2>
               <button
                 type="button"
                 onClick={() => setShowCondForm((v) => !v)}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
               >
-                <Plus size={14} /> Add Condition
+                <Plus size={14} /> {t('Add Condition')}
               </button>
             </div>
 
             {showCondForm && (
               <form onSubmit={addCondition} className="mt-3 border border-slate-100 rounded-2xl p-5 flex gap-3 flex-wrap">
-                <input required placeholder="Condition name (e.g. Hypertension)" value={condName} onChange={(e) => setCondName(e.target.value)} className="flex-1 min-w-[200px] rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input required placeholder={t('Condition name (e.g. Hypertension)')} value={condName} onChange={(e) => setCondName(e.target.value)} className="flex-1 min-w-[200px] rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
                 <button type="submit" disabled={condSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
-                  {condSaving ? 'Saving…' : 'Save'}
+                  {condSaving ? t('Saving…') : t('Save')}
                 </button>
-                <button type="button" onClick={() => setShowCondForm(false)} className="text-slate-500 text-sm font-medium px-2 py-2">Cancel</button>
+                <button type="button" onClick={() => setShowCondForm(false)} className="text-slate-500 text-sm font-medium px-2 py-2">{t('Cancel')}</button>
               </form>
             )}
 
@@ -315,37 +317,37 @@ export default function PatientProfile() {
                   {c.name}
                 </li>
               ))}
-              {p.conditions.length === 0 && <p className="text-sm text-slate-400">No conditions recorded.</p>}
+              {p.conditions.length === 0 && <p className="text-sm text-slate-400">{t('No conditions recorded.')}</p>}
             </ul>
           </section>
 
           <section>
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <h2 className="text-sm font-bold tracking-wide text-red-600 flex items-center gap-1.5">
-                <AlertTriangle size={14} /> DRUG ALLERGIES — HIGH PRIORITY MEDICAL ALERT
+                <AlertTriangle size={14} /> {t('DRUG ALLERGIES — HIGH PRIORITY MEDICAL ALERT')}
               </h2>
               <button
                 type="button"
                 onClick={() => setShowAllergyForm((v) => !v)}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
               >
-                <Plus size={14} /> Add Allergy
+                <Plus size={14} /> {t('Add Allergy')}
               </button>
             </div>
 
             {showAllergyForm && (
               <form onSubmit={addAllergy} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
-                <input required placeholder="Allergy (e.g. Penicillin)" value={allergyForm.name} onChange={(e) => setAllergyForm({ ...allergyForm, name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input required placeholder={t('Allergy (e.g. Penicillin)')} value={allergyForm.name} onChange={(e) => setAllergyForm({ ...allergyForm, name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
                 <select value={allergyForm.severity} onChange={(e) => setAllergyForm({ ...allergyForm, severity: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white">
-                  <option value="high">High severity</option>
-                  <option value="moderate">Moderate severity</option>
-                  <option value="low">Low severity</option>
+                  <option value="high">{t('High severity')}</option>
+                  <option value="moderate">{t('Moderate severity')}</option>
+                  <option value="low">{t('Low severity')}</option>
                 </select>
                 <div className="sm:col-span-2 flex gap-3">
                   <button type="submit" disabled={allergySaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
-                    {allergySaving ? 'Saving…' : 'Save'}
+                    {allergySaving ? t('Saving…') : t('Save')}
                   </button>
-                  <button type="button" onClick={() => setShowAllergyForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">Cancel</button>
+                  <button type="button" onClick={() => setShowAllergyForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">{t('Cancel')}</button>
                 </div>
               </form>
             )}
@@ -356,54 +358,54 @@ export default function PatientProfile() {
                   ⚠ {a.name}
                 </li>
               ))}
-              {p.allergies.length === 0 && <p className="text-sm text-slate-400">No known drug allergies.</p>}
+              {p.allergies.length === 0 && <p className="text-sm text-slate-400">{t('No known drug allergies.')}</p>}
             </ul>
           </section>
 
           <section>
-            <h2 className="text-sm font-bold tracking-wide text-slate-400">ADVERSE DRUG REACTION HISTORY</h2>
-            <p className="mt-3 text-sm text-slate-500">This prototype does not yet track ADR history — not evaluated, not a confirmed all-clear.</p>
+            <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('ADVERSE DRUG REACTION HISTORY')}</h2>
+            <p className="mt-3 text-sm text-slate-500">{t('This prototype does not yet track ADR history — not evaluated, not a confirmed all-clear.')}</p>
           </section>
 
           <section>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h2 className="text-sm font-bold tracking-wide text-slate-400">CURRENT MEDICATIONS</h2>
+              <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('CURRENT MEDICATIONS')}</h2>
               <button
                 type="button"
                 onClick={() => setShowMedForm((v) => !v)}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
               >
-                <Plus size={14} /> Add Medication
+                <Plus size={14} /> {t('Add Medication')}
               </button>
             </div>
 
             {showMedForm && (
               <form onSubmit={addMedication} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
-                <input required placeholder="Medicine name" value={medForm.name} onChange={(e) => setMedForm({ ...medForm, name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
-                <input placeholder="Dose (e.g. 500mg)" value={medForm.dose} onChange={(e) => setMedForm({ ...medForm, dose: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
-                <input placeholder="Frequency (e.g. Twice daily)" value={medForm.frequency} onChange={(e) => setMedForm({ ...medForm, frequency: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
-                <input placeholder="Duration (e.g. 7 days)" value={medForm.duration} onChange={(e) => setMedForm({ ...medForm, duration: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input required placeholder={t('Medicine name')} value={medForm.name} onChange={(e) => setMedForm({ ...medForm, name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input placeholder={t('Dose (e.g. 500mg)')} value={medForm.dose} onChange={(e) => setMedForm({ ...medForm, dose: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input placeholder={t('Frequency (e.g. Twice daily)')} value={medForm.frequency} onChange={(e) => setMedForm({ ...medForm, frequency: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input placeholder={t('Duration (e.g. 7 days)')} value={medForm.duration} onChange={(e) => setMedForm({ ...medForm, duration: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
                 <div className="sm:col-span-2 flex gap-3">
                   <button type="submit" disabled={medSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
-                    {medSaving ? 'Saving…' : 'Save medication'}
+                    {medSaving ? t('Saving…') : t('Save medication')}
                   </button>
-                  <button type="button" onClick={() => setShowMedForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">Cancel</button>
+                  <button type="button" onClick={() => setShowMedForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">{t('Cancel')}</button>
                 </div>
               </form>
             )}
 
             <div className="mt-3 overflow-x-auto">
               {p.medications.length === 0 ? (
-                <p className="text-sm text-slate-400 py-4">No medications recorded yet.</p>
+                <p className="text-sm text-slate-400 py-4">{t('No medications recorded yet.')}</p>
               ) : (
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="text-left text-slate-400 border-b border-slate-100">
-                    <th className="py-2 pr-4 font-medium">Medicine</th>
-                    <th className="py-2 pr-4 font-medium">Dose</th>
-                    <th className="py-2 pr-4 font-medium">Frequency</th>
-                    <th className="py-2 pr-4 font-medium">Duration</th>
-                    <th className="py-2 font-medium">Status</th>
+                    <th className="py-2 pr-4 font-medium">{t('Medicine')}</th>
+                    <th className="py-2 pr-4 font-medium">{t('Dose')}</th>
+                    <th className="py-2 pr-4 font-medium">{t('Frequency')}</th>
+                    <th className="py-2 pr-4 font-medium">{t('Duration')}</th>
+                    <th className="py-2 font-medium">{t('Status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -428,27 +430,27 @@ export default function PatientProfile() {
 
           <section>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h2 className="text-sm font-bold tracking-wide text-slate-400">RECENT LABORATORY SUMMARY</h2>
+              <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('RECENT LABORATORY SUMMARY')}</h2>
               <button
                 type="button"
                 onClick={() => setShowLabForm((v) => !v)}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
               >
-                <Plus size={14} /> Add Lab Result
+                <Plus size={14} /> {t('Add Lab Result')}
               </button>
             </div>
 
             {showLabForm && (
               <form onSubmit={addLabResult} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
-                <input required placeholder="Test name (e.g. eGFR)" value={labForm.test_name} onChange={(e) => setLabForm({ ...labForm, test_name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm sm:col-span-2" />
-                <input placeholder="Value" value={labForm.value} onChange={(e) => setLabForm({ ...labForm, value: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
-                <input placeholder="Unit (e.g. mg/dL)" value={labForm.unit} onChange={(e) => setLabForm({ ...labForm, unit: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input required placeholder={t('Test name (e.g. eGFR)')} value={labForm.test_name} onChange={(e) => setLabForm({ ...labForm, test_name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm sm:col-span-2" />
+                <input placeholder={t('Value')} value={labForm.value} onChange={(e) => setLabForm({ ...labForm, value: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input placeholder={t('Unit (e.g. mg/dL)')} value={labForm.unit} onChange={(e) => setLabForm({ ...labForm, unit: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
                 <input type="date" value={labForm.recorded_at} onChange={(e) => setLabForm({ ...labForm, recorded_at: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm sm:col-span-2" />
                 <div className="sm:col-span-2 flex gap-3">
                   <button type="submit" disabled={labSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
-                    {labSaving ? 'Saving…' : 'Save'}
+                    {labSaving ? t('Saving…') : t('Save')}
                   </button>
-                  <button type="button" onClick={() => setShowLabForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">Cancel</button>
+                  <button type="button" onClick={() => setShowLabForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">{t('Cancel')}</button>
                 </div>
               </form>
             )}
@@ -462,16 +464,16 @@ export default function PatientProfile() {
                   </p>
                 </div>
               ))}
-              {p.labResults.length === 0 && <p className="text-sm text-slate-400">No lab results recorded yet.</p>}
+              {p.labResults.length === 0 && <p className="text-sm text-slate-400">{t('No lab results recorded yet.')}</p>}
             </div>
           </section>
 
           <section>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h2 className="text-sm font-bold tracking-wide text-slate-400">DOCUMENTS &amp; REPORTS</h2>
+              <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('DOCUMENTS & REPORTS')}</h2>
               <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 cursor-pointer">
                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                {uploading ? 'Uploading…' : 'Upload Document'}
+                {uploading ? t('Uploading…') : t('Upload Document')}
                 <input type="file" className="hidden" onChange={handleUpload} disabled={uploading} />
               </label>
             </div>
@@ -491,20 +493,20 @@ export default function PatientProfile() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button type="button" onClick={() => handleDownload(doc)} className="p-2 text-slate-400 hover:text-brand-600" title="Download">
+                    <button type="button" onClick={() => handleDownload(doc)} className="p-2 text-slate-400 hover:text-brand-600" title={t('Download')}>
                       <Download size={16} />
                     </button>
-                    <button type="button" onClick={() => handleDelete(doc)} className="p-2 text-slate-400 hover:text-red-600" title="Delete">
+                    <button type="button" onClick={() => handleDelete(doc)} className="p-2 text-slate-400 hover:text-red-600" title={t('Delete')}>
                       <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
               ))}
-              {documents.length === 0 && <p className="text-sm text-slate-400">No documents uploaded yet.</p>}
+              {documents.length === 0 && <p className="text-sm text-slate-400">{t('No documents uploaded yet.')}</p>}
             </div>
 
             <p className="mt-3 text-xs text-slate-400">
-              Files are stored privately in your account and are only ever accessible through short-lived, secure links.
+              {t('Files are stored privately in your account and are only ever accessible through short-lived, secure links.')}
             </p>
           </section>
         </div>
@@ -525,9 +527,10 @@ function formatFileSize(bytes) {
 }
 
 function Field({ label, value, icon: Icon }) {
+  const { t } = useLanguage()
   return (
     <div>
-      <p className="text-xs text-slate-400">{label}</p>
+      <p className="text-xs text-slate-400">{t(label)}</p>
       <p className="mt-0.5 font-semibold text-ink-900 flex items-center gap-1.5">
         {Icon && <Icon size={14} className="text-slate-400" />}
         {value || '—'}
@@ -537,9 +540,10 @@ function Field({ label, value, icon: Icon }) {
 }
 
 function EditField({ label, value, onChange, type = 'text' }) {
+  const { t } = useLanguage()
   return (
     <div>
-      <label className="text-xs text-slate-400">{label}</label>
+      <label className="text-xs text-slate-400">{t(label)}</label>
       <input
         type={type}
         value={value}
@@ -551,18 +555,19 @@ function EditField({ label, value, onChange, type = 'text' }) {
 }
 
 function EditSelect({ label, value, options, onChange }) {
+  const { t } = useLanguage()
   return (
     <div>
-      <label className="text-xs text-slate-400">{label}</label>
+      <label className="text-xs text-slate-400">{t(label)}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2.5 bg-white"
       >
-        <option value="">Select…</option>
+        <option value="">{t('Select…')}</option>
         {options.map((o) => (
           <option key={o} value={o}>
-            {o}
+            {t(o)}
           </option>
         ))}
       </select>

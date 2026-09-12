@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe, Pill } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { supabase } from '../lib/supabaseClient'
 import { getMedicationReminders } from '../lib/medicationReminders'
 
@@ -14,6 +15,7 @@ const navItems = [
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth()
+  const { lang, setLang, t } = useLanguage()
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -71,7 +73,7 @@ export default function Navbar() {
           </span>
           <span className="flex flex-col leading-tight">
             <span className="text-lg font-extrabold tracking-tight text-ink-900">MEDILINK</span>
-            <span className="text-[11px] font-medium text-teal-600">Smart Health Ecosystem</span>
+            <span className="text-[11px] font-medium text-teal-600">{t('Smart Health Ecosystem')}</span>
           </span>
         </Link>
 
@@ -87,7 +89,7 @@ export default function Navbar() {
                 }`
               }
             >
-              {item.label}
+              {t(item.label)}
             </NavLink>
           ))}
         </nav>
@@ -101,6 +103,13 @@ export default function Navbar() {
         </button>
 
         <div className="hidden lg:flex items-center gap-2.5 shrink-0">
+          <button
+            onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')}
+            className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-500 hover:text-brand-600 hover:border-brand-200 transition-colors"
+            aria-label="Toggle language"
+          >
+            {lang === 'hi' ? 'EN' : 'हि'}
+          </button>
           <div className="relative">
             <button
               aria-label="Notifications"
@@ -114,9 +123,9 @@ export default function Navbar() {
             </button>
             {notifOpen && (
               <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-100 rounded-xl shadow-lg py-3 px-4 max-h-80 overflow-y-auto">
-                <p className="text-sm font-semibold text-ink-900">Notifications</p>
+                <p className="text-sm font-semibold text-ink-900">{t('Notifications')}</p>
                 {notifications.length === 0 ? (
-                  <p className="mt-1 text-sm text-slate-400">No new notifications.</p>
+                  <p className="mt-1 text-sm text-slate-400">{t('No new notifications.')}</p>
                 ) : (
                   <ul className="mt-2 flex flex-col gap-2.5">
                     {notifications.map((n) => (
@@ -155,7 +164,7 @@ export default function Navbar() {
                   <span className="text-sm font-semibold text-ink-900">
                     {profile?.full_name || user.email}
                   </span>
-                  <span className="text-xs text-slate-400">{profile?.health_id || 'Patient'}</span>
+                  <span className="text-xs text-slate-400">{profile?.health_id || t('Patient')}</span>
                 </span>
                 <ChevronDown size={16} className="text-slate-400" />
               </button>
@@ -167,13 +176,13 @@ export default function Navbar() {
                     onClick={() => setMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
                   >
-                    Patient Profile
+                    {t('Patient Profile')}
                   </Link>
                   <button
                     onClick={handleSignOut}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
                   >
-                    <LogOut size={15} /> Sign out
+                    <LogOut size={15} /> {t('Sign out')}
                   </button>
                 </div>
               )}
@@ -183,7 +192,7 @@ export default function Navbar() {
               to="/login"
               className="px-4 py-2 rounded-full bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition-colors"
             >
-              Sign in
+              {t('Sign in')}
             </Link>
           )}
         </div>
@@ -201,24 +210,30 @@ export default function Navbar() {
                 `py-2.5 text-[15px] font-medium ${isActive ? 'text-brand-700' : 'text-slate-600'}`
               }
             >
-              {item.label}
+              {t(item.label)}
             </NavLink>
           ))}
           <div className="mt-2 pt-3 border-t border-slate-100 flex flex-col gap-1">
             {user ? (
               <>
                 <Link to="/profile" onClick={() => setMobileOpen(false)} className="py-2.5 text-[15px] font-medium text-slate-600">
-                  Patient Profile
+                  {t('Patient Profile')}
                 </Link>
                 <button onClick={handleSignOut} className="flex items-center gap-2 py-2.5 text-[15px] font-medium text-slate-600">
-                  <LogOut size={15} /> Sign out
+                  <LogOut size={15} /> {t('Sign out')}
                 </button>
               </>
             ) : (
               <Link to="/login" onClick={() => setMobileOpen(false)} className="py-2.5 text-[15px] font-semibold text-brand-600">
-                Sign in
+                {t('Sign in')}
               </Link>
             )}
+            <button
+              onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')}
+              className="mt-2 pt-3 border-t border-slate-100 text-left py-2.5 text-[15px] font-medium text-slate-600"
+            >
+              {lang === 'hi' ? 'Switch to English' : 'हिंदी में देखें (Switch to Hindi)'}
+            </button>
           </div>
         </div>
       )}
