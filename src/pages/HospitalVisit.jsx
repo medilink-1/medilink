@@ -87,16 +87,16 @@ export default function HospitalVisit() {
               <p className="text-sm text-ink-900"><span className="text-slate-500">Primary diagnosis: </span>{v.diagnosis}</p>
 
               <button onClick={() => setExpanded(expanded === v.id ? null : v.id)} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600">
-                <FileDown size={14} /> {expanded === v.id ? 'Hide' : 'View'} Discharge Summary
+                <FileDown size={14} /> {expanded === v.id ? 'Hide' : 'View'} Treatment Details
               </button>
               {expanded === v.id && (
                 <div className="mt-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                  <p className="font-semibold text-ink-900 mb-1">Investigations</p>
-                  <p>Clinical assessment, vitals monitoring, and relevant diagnostic workup performed during admission.</p>
-                  <p className="font-semibold text-ink-900 mt-3 mb-1">Treatment</p>
-                  <p>{v.treatment_summary || 'Not documented.'}</p>
-                  <p className="font-semibold text-ink-900 mt-3 mb-1">Discharge Summary</p>
-                  <p>Patient discharged in stable condition with follow-up instructions provided.</p>
+                  <p className="font-semibold text-ink-900 mb-1">Treatment Summary</p>
+                  <p>{v.treatment_summary || 'Not documented for this admission.'}</p>
+                  <p className="mt-3 text-xs text-slate-400">
+                    This reflects only what was entered for this admission — MediLink does not
+                    generate clinical documentation automatically.
+                  </p>
                 </div>
               )}
             </div>

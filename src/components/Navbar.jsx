@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X } from 'lucide-react'
+import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabaseClient'
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -15,7 +16,37 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [notifications, setNotifications] = useState([])
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!user) {
+      setNotifications([])
+      return
+    }
+    let cancelled = false
+
+    async function loadNotifications() {
+      const [{ data: vax }, { data: deps }] = await Promise.all([
+        supabase.from('vaccinations').select('*').neq('status', 'completed'),
+        supabase.from('dependents').select('*'),
+      ])
+      if (cancelled) return
+      const depNameById = Object.fromEntries((deps || []).map((d) => [d.id, d.name]))
+      const items = (vax || []).map((v) => ({
+        id: v.id,
+        text: `${depNameById[v.dependent_id] || 'A dependent'}’s ${v.vaccine_name} vaccination is ${
+          v.status === 'due_soon' ? 'due soon' : 'scheduled'
+        }${v.event_date ? ` (${new Date(v.event_date).toLocaleDateString()})` : ''}.`,
+      }))
+      setNotifications(items)
+    }
+
+    loadNotifications()
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   const handleSignOut = async () => {
     await signOut()
@@ -66,14 +97,28 @@ export default function Navbar() {
             <button
               aria-label="Notifications"
               onClick={() => setNotifOpen((v) => !v)}
-              className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-600 hover:border-brand-200 transition-colors"
+              className="relative w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-600 hover:border-brand-200 transition-colors"
             >
               <Bell size={17} />
+              {notifications.length > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+              )}
             </button>
             {notifOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-100 rounded-xl shadow-lg py-3 px-4">
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-100 rounded-xl shadow-lg py-3 px-4 max-h-80 overflow-y-auto">
                 <p className="text-sm font-semibold text-ink-900">Notifications</p>
-                <p className="mt-1 text-sm text-slate-400">No new notifications.</p>
+                {notifications.length === 0 ? (
+                  <p className="mt-1 text-sm text-slate-400">No new notifications.</p>
+                ) : (
+                  <ul className="mt-2 flex flex-col gap-2.5">
+                    {notifications.map((n) => (
+                      <li key={n.id} className="flex items-start gap-2 text-sm text-slate-600 border-t border-slate-50 pt-2.5 first:border-t-0 first:pt-0">
+                        <Syringe size={14} className="text-brand-500 mt-0.5 shrink-0" />
+                        {n.text}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>
