@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import {
   ChevronRight, User, Pill, Stethoscope, Building2, Syringe, ShieldCheck,
-  ArrowDown, AlertTriangle, CheckCircle2, FileWarning,
+  AlertTriangle, CheckCircle2, FileWarning,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { usePatientData } from '../lib/usePatientData'
 import SmartHealthCard from '../components/SmartHealthCard'
+import { analyzeMedication } from '../lib/medicationSafety'
 
 const ecosystemCards = [
   { icon: User, title: 'Patient Profile', desc: 'Personal information, medical history and complete health summary.', to: '/profile' },
@@ -21,6 +22,13 @@ const workflowSteps = [
   'Medication Entry', 'Safety Analysis', 'Risk Identification', 'Real-Time Alert',
   'Healthcare Professional Review', 'Informed Clinical Decision',
 ]
+
+const riskBannerStyles = {
+  HIGH: 'bg-red-50 text-red-700 border-red-100',
+  MODERATE: 'bg-amber-50 text-amber-700 border-amber-100',
+  CAUTION: 'bg-amber-50 text-amber-700 border-amber-100',
+  LOW: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+}
 
 const impactPoints = [
   'Connected Longitudinal Health Records',
@@ -38,6 +46,17 @@ export default function Home() {
 
   const activeMeds = patient.medications.filter((m) => m.status === 'active')
   const timelinePreview = patient.timelineEvents.slice(0, 5)
+
+  const previewMed = activeMeds[0]
+  const previewReport =
+    user && previewMed
+      ? analyzeMedication(previewMed.name, {
+          allergies: patient.allergies,
+          conditions: patient.conditions,
+          labResults: patient.labResults,
+          medications: patient.medications,
+        })
+      : null
 
   return (
     <div>
@@ -193,62 +212,117 @@ export default function Home() {
             Transforming patient health information into actionable safety insights.
           </p>
 
-          <div className="mt-8 rounded-3xl bg-white border border-slate-100 p-8 grid md:grid-cols-2 gap-8">
-            <div>
-              <p className="text-xs font-bold text-slate-400">NEW MEDICATION</p>
-              <p className="text-2xl font-bold text-ink-900 mt-1">Amoxicillin</p>
+          {!user ? (
+            <div className="mt-8 rounded-3xl bg-white border border-slate-100 p-8 grid md:grid-cols-2 gap-8">
+              <div>
+                <p className="text-xs font-bold text-slate-400">EXAMPLE: NEW MEDICATION</p>
+                <p className="text-2xl font-bold text-ink-900 mt-1">Amoxicillin</p>
 
-              <p className="mt-6 text-xs font-bold text-slate-400">SYSTEM SAFETY ANALYSIS</p>
-              <ul className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
-                {[
-                  'Drug–Drug Interaction Check', 'Drug–Disease Contraindication Check', 'Drug Allergy Check',
-                  'Previous ADR History', 'Therapeutic Duplication Check', 'Renal Function Considerations',
-                  'Hepatic Function Considerations',
-                ].map((c) => (
-                  <li key={c} className="flex items-center gap-2">
-                    <CheckCircle2 size={15} className="text-teal-600" /> {c}
-                  </li>
-                ))}
-              </ul>
-            </div>
+                <p className="mt-6 text-xs font-bold text-slate-400">SYSTEM SAFETY ANALYSIS</p>
+                <ul className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
+                  {[
+                    'Drug–Drug Interaction Check', 'Drug–Disease Contraindication Check', 'Drug Allergy Check',
+                  ].map((c) => (
+                    <li key={c} className="flex items-center gap-2">
+                      <CheckCircle2 size={15} className="text-teal-600" /> {c}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-            <div>
-              <div className="rounded-2xl bg-red-50 border border-red-100 p-6">
-                <p className="text-xs font-bold text-red-600">HIGH RISK</p>
-                <p className="mt-2 font-bold text-ink-900 flex items-center gap-2">
-                  <FileWarning size={18} className="text-red-600" /> Potential Allergy-Related Risk Detected
-                </p>
-                <p className="mt-2 text-sm text-slate-600">
-                  The patient has a documented Penicillin allergy. Review the patient's clinical
-                  history before prescribing or dispensing.
+              <div>
+                <div className="rounded-2xl bg-red-50 border border-red-100 p-6">
+                  <p className="text-xs font-bold text-red-600">HIGH RISK (EXAMPLE)</p>
+                  <p className="mt-2 font-bold text-ink-900 flex items-center gap-2">
+                    <FileWarning size={18} className="text-red-600" /> Potential Allergy-Related Risk Detected
+                  </p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    A patient with a documented Penicillin allergy would be flagged here before
+                    this medicine is prescribed or dispensed.
+                  </p>
+                </div>
+                <Link
+                  to="/signup"
+                  className="mt-5 inline-flex bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
+                >
+                  Create your account
+                </Link>
+                <p className="mt-4 text-xs font-bold text-slate-400">CLINICAL DECISION SUPPORT ONLY</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  MediLink provides medication safety information to support healthcare professionals.
+                  It does not replace professional clinical judgment.
                 </p>
               </div>
+            </div>
+          ) : previewReport ? (
+            <div className="mt-8 rounded-3xl bg-white border border-slate-100 p-8 grid md:grid-cols-2 gap-8">
+              <div>
+                <p className="text-xs font-bold text-slate-400">YOUR MOST RECENT MEDICATION</p>
+                <p className="text-2xl font-bold text-ink-900 mt-1">{previewReport.medicine}</p>
+
+                <p className="mt-6 text-xs font-bold text-slate-400">SYSTEM SAFETY ANALYSIS</p>
+                <ul className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
+                  {previewReport.checks.map((c) => (
+                    <li key={c.title} className="flex items-center gap-2">
+                      <CheckCircle2
+                        size={15}
+                        className={c.status === 'NOT EVALUATED' ? 'text-slate-300' : 'text-teal-600'}
+                      />
+                      {c.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <div className={`rounded-2xl border p-6 ${riskBannerStyles[previewReport.overallRisk]}`}>
+                  <p className="text-xs font-bold">{previewReport.overallRisk} RISK</p>
+                  <p className="mt-2 font-bold flex items-center gap-2">
+                    <FileWarning size={18} /> {previewReport.summaryMessage}
+                  </p>
+                </div>
+                <Link
+                  to="/medication-safety"
+                  className="mt-5 inline-flex bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
+                >
+                  View Full Analysis
+                </Link>
+                <p className="mt-4 text-xs font-bold text-slate-400">CLINICAL DECISION SUPPORT ONLY</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  MediLink provides medication safety information to support healthcare professionals.
+                  It does not replace professional clinical judgment.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-8 rounded-3xl bg-white border border-slate-100 p-10 text-center">
+              <p className="font-semibold text-ink-900">Add a medication to see your personalized safety analysis here.</p>
+              <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
+                This section shows a live, patient-specific safety review the moment you add a
+                medication on your Patient Profile.
+              </p>
               <Link
-                to={user ? '/medication-safety' : '/login'}
+                to="/medication-safety"
                 className="mt-5 inline-flex bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
               >
-                Analyze Medication
+                Run a Safety Check
               </Link>
-              <p className="mt-4 text-xs font-bold text-slate-400">CLINICAL DECISION SUPPORT ONLY</p>
-              <p className="text-xs text-slate-400 mt-1">
-                MediLink provides medication safety information to support healthcare professionals.
-                It does not replace professional clinical judgment.
-              </p>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
       {/* SECTION 6: HOW MEDILINK WORKS */}
       <section className="max-w-5xl mx-auto px-6 py-20">
         <h2 className="text-3xl font-extrabold text-ink-900 text-center">How MediLink Works</h2>
-        <div className="mt-10 flex flex-col items-center">
+        <p className="mt-2 text-slate-500 text-center">From your Smart Health ID to an informed clinical decision.</p>
+        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {workflowSteps.map((step, i) => (
-            <div key={step} className="flex flex-col items-center">
-              <div className="rounded-xl border border-slate-100 bg-white shadow-sm px-6 py-3 font-semibold text-ink-900 text-sm">
-                {step}
-              </div>
-              {i < workflowSteps.length - 1 && <ArrowDown size={18} className="my-2 text-brand-300" />}
+            <div key={step} className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5 flex flex-col gap-3">
+              <span className="w-7 h-7 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">
+                {i + 1}
+              </span>
+              <p className="font-semibold text-ink-900 text-sm leading-snug">{step}</p>
             </div>
           ))}
         </div>
