@@ -354,29 +354,24 @@ export default function Home() {
       </section>
 
       {/* SECTION 7: MEDILINK IMPACT */}
-      <section className="bg-brand-700 text-white py-20">
+      <section className="bg-brand-700 text-white py-14">
         <div className="max-w-5xl mx-auto px-6">
           <h2 className="text-3xl font-extrabold">The MediLink Impact</h2>
           <p className="mt-2 text-white/70 max-w-xl">
             Practical outcomes for patients and the healthcare professionals treating them.
           </p>
-          <div className="mt-8 grid sm:grid-cols-2 gap-4">
-            {impactPoints.map((point, i) => {
-              const isDangling = impactPoints.length % 2 === 1 && i === impactPoints.length - 1
-              return (
-                <div
-                  key={point.text}
-                  className={`flex items-center gap-4 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-5 transition-colors ${
-                    isDangling ? 'sm:col-span-2 sm:max-w-[calc(50%-0.5rem)] sm:mx-auto' : ''
-                  }`}
-                >
-                  <span className="w-10 h-10 rounded-full bg-teal-400/20 text-teal-300 flex items-center justify-center shrink-0">
-                    <point.icon size={18} />
-                  </span>
-                  <span className="text-sm font-medium leading-snug">{point.text}</span>
-                </div>
-              )
-            })}
+          <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {impactPoints.map((point) => (
+              <div
+                key={point.text}
+                className="flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl p-4 transition-colors"
+              >
+                <span className="w-9 h-9 rounded-full bg-teal-400/20 text-teal-300 flex items-center justify-center shrink-0">
+                  <point.icon size={16} />
+                </span>
+                <span className="text-sm font-medium leading-snug">{point.text}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
