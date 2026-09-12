@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe } from 'lucide-react'
+import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe, Pill } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
+import { getMedicationReminders } from '../lib/medicationReminders'
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -27,19 +28,26 @@ export default function Navbar() {
     let cancelled = false
 
     async function loadNotifications() {
-      const [{ data: vax }, { data: deps }] = await Promise.all([
+      const [{ data: vax }, { data: deps }, { data: meds }] = await Promise.all([
         supabase.from('vaccinations').select('*').neq('status', 'completed'),
         supabase.from('dependents').select('*'),
+        supabase.from('medications').select('*').eq('status', 'active'),
       ])
       if (cancelled) return
       const depNameById = Object.fromEntries((deps || []).map((d) => [d.id, d.name]))
-      const items = (vax || []).map((v) => ({
-        id: v.id,
+      const medItems = getMedicationReminders(meds || []).map((r) => ({
+        id: r.id,
+        type: 'medication',
+        text: r.text,
+      }))
+      const vaxItems = (vax || []).map((v) => ({
+        id: `vax-${v.id}`,
+        type: 'vaccination',
         text: `${depNameById[v.dependent_id] || 'A dependent'}’s ${v.vaccine_name} vaccination is ${
           v.status === 'due_soon' ? 'due soon' : 'scheduled'
         }${v.event_date ? ` (${new Date(v.event_date).toLocaleDateString()})` : ''}.`,
       }))
-      setNotifications(items)
+      setNotifications([...medItems, ...vaxItems])
     }
 
     loadNotifications()
@@ -113,7 +121,11 @@ export default function Navbar() {
                   <ul className="mt-2 flex flex-col gap-2.5">
                     {notifications.map((n) => (
                       <li key={n.id} className="flex items-start gap-2 text-sm text-slate-600 border-t border-slate-50 pt-2.5 first:border-t-0 first:pt-0">
-                        <Syringe size={14} className="text-brand-500 mt-0.5 shrink-0" />
+                        {n.type === 'medication' ? (
+                          <Pill size={14} className="text-brand-500 mt-0.5 shrink-0" />
+                        ) : (
+                          <Syringe size={14} className="text-brand-500 mt-0.5 shrink-0" />
+                        )}
                         {n.text}
                       </li>
                     ))}
