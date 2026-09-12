@@ -44,10 +44,16 @@ export function AuthProvider({ children }) {
   }, [loadProfile])
 
   const signUp = async ({ email, password, fullName }) => {
+    // Explicit emailRedirectTo so the "confirm your email" link lands back
+    // on this exact deployment (origin + base path, e.g. GitHub Pages'
+    // /medilink/ subpath) instead of falling back to whatever "Site URL"
+    // happens to be configured in the Supabase dashboard -- without this,
+    // confirmation links can 404 on project sites served from a subpath.
+    const emailRedirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: { data: { full_name: fullName }, emailRedirectTo },
     })
     if (error) throw error
 
