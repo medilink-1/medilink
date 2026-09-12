@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import {
   ChevronRight, User, Pill, Stethoscope, Building2, Syringe, ShieldCheck,
-  AlertTriangle, CheckCircle2, FileWarning,
+  AlertTriangle, CheckCircle2, FileWarning, Link2, HeartHandshake, Zap,
+  ClipboardCheck, ShieldAlert, Lightbulb,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { usePatientData } from '../lib/usePatientData'
@@ -24,20 +25,20 @@ const workflowSteps = [
 ]
 
 const riskBannerStyles = {
-  HIGH: 'bg-red-50 text-red-700 border-red-100',
-  MODERATE: 'bg-amber-50 text-amber-700 border-amber-100',
-  CAUTION: 'bg-amber-50 text-amber-700 border-amber-100',
-  LOW: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  HIGH: 'bg-red-50 text-red-700 border border-red-100 border-l-4 border-l-red-500',
+  MODERATE: 'bg-amber-50 text-amber-700 border border-amber-100 border-l-4 border-l-amber-500',
+  CAUTION: 'bg-amber-50 text-amber-700 border border-amber-100 border-l-4 border-l-amber-500',
+  LOW: 'bg-emerald-50 text-emerald-700 border border-emerald-100 border-l-4 border-l-emerald-500',
 }
 
 const impactPoints = [
-  'Connected Longitudinal Health Records',
-  'Improved Continuity of Care',
-  'Immediate Access to Critical Patient Information',
-  'Patient-Specific Medication Safety Review',
-  'Early Identification of Potential Medication Risks',
-  'Better-Informed Healthcare Decisions',
-  'Enhanced Patient Safety',
+  { icon: Link2, text: 'Connected Longitudinal Health Records' },
+  { icon: HeartHandshake, text: 'Improved Continuity of Care' },
+  { icon: Zap, text: 'Immediate Access to Critical Patient Information' },
+  { icon: ClipboardCheck, text: 'Patient-Specific Medication Safety Review' },
+  { icon: ShieldAlert, text: 'Early Identification of Potential Medication Risks' },
+  { icon: Lightbulb, text: 'Better-Informed Healthcare Decisions' },
+  { icon: ShieldCheck, text: 'Enhanced Patient Safety' },
 ]
 
 export default function Home() {
@@ -213,10 +214,17 @@ export default function Home() {
           </p>
 
           {!user ? (
-            <div className="mt-8 rounded-3xl bg-white border border-slate-100 p-8 grid md:grid-cols-2 gap-8">
+            <div className="mt-8 rounded-3xl bg-white border border-slate-100 shadow-sm p-8 grid md:grid-cols-2 gap-8">
               <div>
-                <p className="text-xs font-bold text-slate-400">EXAMPLE: NEW MEDICATION</p>
-                <p className="text-2xl font-bold text-ink-900 mt-1">Amoxicillin</p>
+                <div className="flex items-center gap-3">
+                  <span className="w-11 h-11 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                    <Pill size={20} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400">EXAMPLE: NEW MEDICATION</p>
+                    <p className="text-xl font-bold text-ink-900">Amoxicillin</p>
+                  </div>
+                </div>
 
                 <p className="mt-6 text-xs font-bold text-slate-400">SYSTEM SAFETY ANALYSIS</p>
                 <ul className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
@@ -230,12 +238,12 @@ export default function Home() {
                 </ul>
               </div>
 
-              <div>
-                <div className="rounded-2xl bg-red-50 border border-red-100 p-6">
-                  <p className="text-xs font-bold text-red-600">HIGH RISK (EXAMPLE)</p>
-                  <p className="mt-2 font-bold text-ink-900 flex items-center gap-2">
-                    <FileWarning size={18} className="text-red-600" /> Potential Allergy-Related Risk Detected
-                  </p>
+              <div className="flex flex-col">
+                <div className="rounded-2xl bg-red-50 border border-red-100 border-l-4 border-l-red-500 p-6">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-red-600">
+                    <FileWarning size={14} /> High risk (example)
+                  </span>
+                  <p className="mt-2 font-semibold text-ink-900">Potential Allergy-Related Risk Detected</p>
                   <p className="mt-2 text-sm text-slate-600">
                     A patient with a documented Penicillin allergy would be flagged here before
                     this medicine is prescribed or dispensed.
@@ -243,11 +251,11 @@ export default function Home() {
                 </div>
                 <Link
                   to="/signup"
-                  className="mt-5 inline-flex bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
+                  className="mt-5 inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
                 >
-                  Create your account
+                  Create your account <ChevronRight size={16} />
                 </Link>
-                <p className="mt-4 text-xs font-bold text-slate-400">CLINICAL DECISION SUPPORT ONLY</p>
+                <p className="mt-auto pt-6 text-xs font-bold text-slate-400">CLINICAL DECISION SUPPORT ONLY</p>
                 <p className="text-xs text-slate-400 mt-1">
                   MediLink provides medication safety information to support healthcare professionals.
                   It does not replace professional clinical judgment.
@@ -255,39 +263,53 @@ export default function Home() {
               </div>
             </div>
           ) : previewReport ? (
-            <div className="mt-8 rounded-3xl bg-white border border-slate-100 p-8 grid md:grid-cols-2 gap-8">
+            <div className="mt-8 rounded-3xl bg-white border border-slate-100 shadow-sm p-8 grid md:grid-cols-2 gap-8">
               <div>
-                <p className="text-xs font-bold text-slate-400">YOUR MOST RECENT MEDICATION</p>
-                <p className="text-2xl font-bold text-ink-900 mt-1">{previewReport.medicine}</p>
+                <div className="flex items-center gap-3">
+                  <span className="w-11 h-11 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                    <Pill size={20} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400">YOUR MOST RECENT MEDICATION</p>
+                    <p className="text-xl font-bold text-ink-900">{previewReport.medicine}</p>
+                  </div>
+                </div>
 
                 <p className="mt-6 text-xs font-bold text-slate-400">SYSTEM SAFETY ANALYSIS</p>
-                <ul className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
-                  {previewReport.checks.map((c) => (
-                    <li key={c.title} className="flex items-center gap-2">
-                      <CheckCircle2
-                        size={15}
-                        className={c.status === 'NOT EVALUATED' ? 'text-slate-300' : 'text-teal-600'}
-                      />
-                      {c.title}
-                    </li>
-                  ))}
+                <ul className="mt-3 flex flex-col gap-2">
+                  {previewReport.checks.map((c) => {
+                    const evaluated = c.status !== 'NOT EVALUATED'
+                    return (
+                      <li key={c.title} className="flex items-center justify-between gap-3 text-sm">
+                        <span className={`flex items-center gap-2 ${evaluated ? 'text-slate-600' : 'text-slate-400'}`}>
+                          <CheckCircle2 size={15} className={evaluated ? 'text-teal-600' : 'text-slate-300'} />
+                          {c.title}
+                        </span>
+                        {!evaluated && (
+                          <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full shrink-0">
+                            Not evaluated
+                          </span>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               </div>
 
-              <div>
-                <div className={`rounded-2xl border p-6 ${riskBannerStyles[previewReport.overallRisk]}`}>
-                  <p className="text-xs font-bold">{previewReport.overallRisk} RISK</p>
-                  <p className="mt-2 font-bold flex items-center gap-2">
-                    <FileWarning size={18} /> {previewReport.summaryMessage}
-                  </p>
+              <div className="flex flex-col">
+                <div className={`rounded-2xl p-6 ${riskBannerStyles[previewReport.overallRisk]}`}>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide">
+                    <FileWarning size={14} /> {previewReport.overallRisk} risk
+                  </span>
+                  <p className="mt-2 font-semibold leading-snug">{previewReport.summaryMessage}</p>
                 </div>
                 <Link
                   to="/medication-safety"
-                  className="mt-5 inline-flex bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
+                  className="mt-5 inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
                 >
-                  View Full Analysis
+                  View Full Analysis <ChevronRight size={16} />
                 </Link>
-                <p className="mt-4 text-xs font-bold text-slate-400">CLINICAL DECISION SUPPORT ONLY</p>
+                <p className="mt-auto pt-6 text-xs font-bold text-slate-400">CLINICAL DECISION SUPPORT ONLY</p>
                 <p className="text-xs text-slate-400 mt-1">
                   MediLink provides medication safety information to support healthcare professionals.
                   It does not replace professional clinical judgment.
@@ -295,17 +317,20 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="mt-8 rounded-3xl bg-white border border-slate-100 p-10 text-center">
-              <p className="font-semibold text-ink-900">Add a medication to see your personalized safety analysis here.</p>
+            <div className="mt-8 rounded-3xl bg-white border border-slate-100 shadow-sm p-10 text-center">
+              <span className="w-12 h-12 mx-auto rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
+                <Pill size={22} />
+              </span>
+              <p className="mt-4 font-semibold text-ink-900">Add a medication to see your personalized safety analysis here.</p>
               <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
                 This section shows a live, patient-specific safety review the moment you add a
                 medication on your Patient Profile.
               </p>
               <Link
                 to="/medication-safety"
-                className="mt-5 inline-flex bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
+                className="mt-5 inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
               >
-                Run a Safety Check
+                Run a Safety Check <ChevronRight size={16} />
               </Link>
             </div>
           )}
@@ -332,18 +357,23 @@ export default function Home() {
       <section className="bg-brand-700 text-white py-20">
         <div className="max-w-5xl mx-auto px-6">
           <h2 className="text-3xl font-extrabold">The MediLink Impact</h2>
+          <p className="mt-2 text-white/70 max-w-xl">
+            Practical outcomes for patients and the healthcare professionals treating them.
+          </p>
           <div className="mt-8 grid sm:grid-cols-2 gap-4">
             {impactPoints.map((point, i) => {
               const isDangling = impactPoints.length % 2 === 1 && i === impactPoints.length - 1
               return (
                 <div
-                  key={point}
-                  className={`flex items-start gap-3 bg-white/10 rounded-2xl p-5 ${
+                  key={point.text}
+                  className={`flex items-center gap-4 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-5 transition-colors ${
                     isDangling ? 'sm:col-span-2 sm:max-w-[calc(50%-0.5rem)] sm:mx-auto' : ''
                   }`}
                 >
-                  <CheckCircle2 size={18} className="text-teal-300 mt-0.5 shrink-0" />
-                  <span className="text-sm font-medium">{point}</span>
+                  <span className="w-10 h-10 rounded-full bg-teal-400/20 text-teal-300 flex items-center justify-center shrink-0">
+                    <point.icon size={18} />
+                  </span>
+                  <span className="text-sm font-medium leading-snug">{point.text}</span>
                 </div>
               )
             })}
