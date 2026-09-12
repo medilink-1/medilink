@@ -18,6 +18,15 @@ export default function PatientProfile() {
   const [showMedForm, setShowMedForm] = useState(false)
   const [medForm, setMedForm] = useState({ name: '', dose: '', frequency: '', duration: '', status: 'active' })
   const [medSaving, setMedSaving] = useState(false)
+  const [showCondForm, setShowCondForm] = useState(false)
+  const [condName, setCondName] = useState('')
+  const [condSaving, setCondSaving] = useState(false)
+  const [showAllergyForm, setShowAllergyForm] = useState(false)
+  const [allergyForm, setAllergyForm] = useState({ name: '', severity: 'high' })
+  const [allergySaving, setAllergySaving] = useState(false)
+  const [showLabForm, setShowLabForm] = useState(false)
+  const [labForm, setLabForm] = useState({ test_name: '', value: '', unit: '', recorded_at: '' })
+  const [labSaving, setLabSaving] = useState(false)
 
   function startEdit() {
     setForm({
@@ -81,6 +90,46 @@ export default function PatientProfile() {
     setMedSaving(false)
     setMedForm({ name: '', dose: '', frequency: '', duration: '', status: 'active' })
     setShowMedForm(false)
+    await p.reload()
+  }
+
+  async function addCondition(e) {
+    e.preventDefault()
+    setCondSaving(true)
+    await supabase.from('conditions').insert({ user_id: user.id, name: condName })
+    setCondSaving(false)
+    setCondName('')
+    setShowCondForm(false)
+    await p.reload()
+  }
+
+  async function addAllergy(e) {
+    e.preventDefault()
+    setAllergySaving(true)
+    await supabase.from('allergies').insert({
+      user_id: user.id,
+      name: allergyForm.name,
+      severity: allergyForm.severity || 'high',
+    })
+    setAllergySaving(false)
+    setAllergyForm({ name: '', severity: 'high' })
+    setShowAllergyForm(false)
+    await p.reload()
+  }
+
+  async function addLabResult(e) {
+    e.preventDefault()
+    setLabSaving(true)
+    await supabase.from('lab_results').insert({
+      user_id: user.id,
+      test_name: labForm.test_name,
+      value: labForm.value || null,
+      unit: labForm.unit || null,
+      recorded_at: labForm.recorded_at || new Date().toISOString().slice(0, 10),
+    })
+    setLabSaving(false)
+    setLabForm({ test_name: '', value: '', unit: '', recorded_at: '' })
+    setShowLabForm(false)
     await p.reload()
   }
 
@@ -177,7 +226,27 @@ export default function PatientProfile() {
           )}
 
           <section>
-            <h2 className="text-sm font-bold tracking-wide text-slate-400">MEDICAL CONDITIONS</h2>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <h2 className="text-sm font-bold tracking-wide text-slate-400">MEDICAL CONDITIONS</h2>
+              <button
+                type="button"
+                onClick={() => setShowCondForm((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+              >
+                <Plus size={14} /> Add Condition
+              </button>
+            </div>
+
+            {showCondForm && (
+              <form onSubmit={addCondition} className="mt-3 border border-slate-100 rounded-2xl p-5 flex gap-3 flex-wrap">
+                <input required placeholder="Condition name (e.g. Hypertension)" value={condName} onChange={(e) => setCondName(e.target.value)} className="flex-1 min-w-[200px] rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <button type="submit" disabled={condSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
+                  {condSaving ? 'Saving…' : 'Save'}
+                </button>
+                <button type="button" onClick={() => setShowCondForm(false)} className="text-slate-500 text-sm font-medium px-2 py-2">Cancel</button>
+              </form>
+            )}
+
             <ul className="mt-3 flex flex-wrap gap-2">
               {p.conditions.map((c) => (
                 <li key={c.id} className="text-sm font-medium bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full">
@@ -189,9 +258,36 @@ export default function PatientProfile() {
           </section>
 
           <section>
-            <h2 className="text-sm font-bold tracking-wide text-red-600 flex items-center gap-1.5">
-              <AlertTriangle size={14} /> DRUG ALLERGIES — HIGH PRIORITY MEDICAL ALERT
-            </h2>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <h2 className="text-sm font-bold tracking-wide text-red-600 flex items-center gap-1.5">
+                <AlertTriangle size={14} /> DRUG ALLERGIES — HIGH PRIORITY MEDICAL ALERT
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAllergyForm((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+              >
+                <Plus size={14} /> Add Allergy
+              </button>
+            </div>
+
+            {showAllergyForm && (
+              <form onSubmit={addAllergy} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
+                <input required placeholder="Allergy (e.g. Penicillin)" value={allergyForm.name} onChange={(e) => setAllergyForm({ ...allergyForm, name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <select value={allergyForm.severity} onChange={(e) => setAllergyForm({ ...allergyForm, severity: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white">
+                  <option value="high">High severity</option>
+                  <option value="moderate">Moderate severity</option>
+                  <option value="low">Low severity</option>
+                </select>
+                <div className="sm:col-span-2 flex gap-3">
+                  <button type="submit" disabled={allergySaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
+                    {allergySaving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button type="button" onClick={() => setShowAllergyForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">Cancel</button>
+                </div>
+              </form>
+            )}
+
             <ul className="mt-3 flex flex-wrap gap-2">
               {p.allergies.map((a) => (
                 <li key={a.id} className="text-sm font-semibold bg-red-50 text-red-700 px-3 py-1.5 rounded-full">
@@ -269,7 +365,32 @@ export default function PatientProfile() {
           </section>
 
           <section>
-            <h2 className="text-sm font-bold tracking-wide text-slate-400">RECENT LABORATORY SUMMARY</h2>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <h2 className="text-sm font-bold tracking-wide text-slate-400">RECENT LABORATORY SUMMARY</h2>
+              <button
+                type="button"
+                onClick={() => setShowLabForm((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+              >
+                <Plus size={14} /> Add Lab Result
+              </button>
+            </div>
+
+            {showLabForm && (
+              <form onSubmit={addLabResult} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
+                <input required placeholder="Test name (e.g. eGFR)" value={labForm.test_name} onChange={(e) => setLabForm({ ...labForm, test_name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm sm:col-span-2" />
+                <input placeholder="Value" value={labForm.value} onChange={(e) => setLabForm({ ...labForm, value: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input placeholder="Unit (e.g. mg/dL)" value={labForm.unit} onChange={(e) => setLabForm({ ...labForm, unit: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input type="date" value={labForm.recorded_at} onChange={(e) => setLabForm({ ...labForm, recorded_at: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm sm:col-span-2" />
+                <div className="sm:col-span-2 flex gap-3">
+                  <button type="submit" disabled={labSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
+                    {labSaving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button type="button" onClick={() => setShowLabForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">Cancel</button>
+                </div>
+              </form>
+            )}
+
             <div className="mt-3 grid sm:grid-cols-3 gap-4">
               {p.labResults.map((l) => (
                 <div key={l.id} className="rounded-2xl border border-slate-100 p-5">
@@ -279,6 +400,7 @@ export default function PatientProfile() {
                   </p>
                 </div>
               ))}
+              {p.labResults.length === 0 && <p className="text-sm text-slate-400">No lab results recorded yet.</p>}
             </div>
           </section>
         </div>
