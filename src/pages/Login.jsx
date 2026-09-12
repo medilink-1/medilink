@@ -46,7 +46,12 @@ export default function Login() {
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-ink-900">Password</span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-ink-900">Password</span>
+            <Link to="/forgot-password" className="text-xs font-semibold text-brand-600">
+              Forgot password?
+            </Link>
+          </div>
           <input
             type="password"
             required
