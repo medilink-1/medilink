@@ -9,7 +9,7 @@ import SmartHealthCard from '../components/SmartHealthCard'
 
 const ecosystemCards = [
   { icon: User, title: 'Patient Profile', desc: 'Personal information, medical history and complete health summary.', to: '/profile' },
-  { icon: Pill, title: 'Pharmacy Visit', desc: 'Medication history and real-time medication safety analysis.', to: '/pharmacy', highlight: true },
+  { icon: Pill, title: 'Medication Safety', desc: 'Medication history and real-time medication safety analysis.', to: '/medication-safety', highlight: true },
   { icon: Stethoscope, title: 'Clinic Visit', desc: 'Consultations, diagnoses and prescriptions.', to: '/clinic' },
   { icon: Building2, title: 'Hospital Visit', desc: 'Admissions, treatments and discharge records.', to: '/hospital' },
   { icon: Syringe, title: 'Child Vaccination', desc: 'Vaccination history and immunization records.', to: '/vaccination' },
