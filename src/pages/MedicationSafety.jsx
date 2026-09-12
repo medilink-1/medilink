@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { usePatientData } from '../lib/usePatientData'
 import { analyzeMedication } from '../lib/medicationSafety'
 
-const quickSelect = ['Amoxicillin', 'Ibuprofen', 'Metformin', 'Amlodipine']
+const quickSelect = ['Amoxicillin', 'Ibuprofen', 'Metformin', 'Amlodipine', 'Atorvastatin', 'Warfarin']
 
 const riskStyles = {
   HIGH: 'bg-red-50 text-red-700 border-red-100',
