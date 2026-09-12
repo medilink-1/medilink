@@ -259,12 +259,20 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-6">
           <h2 className="text-3xl font-extrabold">The MediLink Impact</h2>
           <div className="mt-8 grid sm:grid-cols-2 gap-4">
-            {impactPoints.map((point) => (
-              <div key={point} className="flex items-start gap-3 bg-white/10 rounded-2xl p-5">
-                <CheckCircle2 size={18} className="text-teal-300 mt-0.5 shrink-0" />
-                <span className="text-sm font-medium">{point}</span>
-              </div>
-            ))}
+            {impactPoints.map((point, i) => {
+              const isDangling = impactPoints.length % 2 === 1 && i === impactPoints.length - 1
+              return (
+                <div
+                  key={point}
+                  className={`flex items-start gap-3 bg-white/10 rounded-2xl p-5 ${
+                    isDangling ? 'sm:col-span-2 sm:max-w-[calc(50%-0.5rem)] sm:mx-auto' : ''
+                  }`}
+                >
+                  <CheckCircle2 size={18} className="text-teal-300 mt-0.5 shrink-0" />
+                  <span className="text-sm font-medium">{point}</span>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
