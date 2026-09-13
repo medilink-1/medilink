@@ -8,7 +8,7 @@
 // "no risk" -- so coverage can grow over time without ever having
 // silently claimed more than it checked.
 
-import { INTERACTION_RULES, CONTRAINDICATION_RULES, findDrug } from './drugDatabase'
+import { INTERACTION_RULES, CONTRAINDICATION_RULES, findDrug } from './drugDatabase.js'
 
 const RISK_ORDER = { LOW: 0, CAUTION: 1, MODERATE: 2, HIGH: 3 }
 
