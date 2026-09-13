@@ -3,6 +3,7 @@ import { AlertTriangle, Loader2, Printer, RefreshCw, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { usePatientData } from '../lib/usePatientData'
 import { analyzeMedication } from '../lib/medicationSafety'
+import MedicineAutocomplete from '../components/MedicineAutocomplete'
 
 const quickSelect = ['Amoxicillin', 'Ibuprofen', 'Metformin', 'Amlodipine', 'Atorvastatin', 'Warfarin']
 
@@ -69,11 +70,13 @@ export default function MedicationSafety() {
       <div className="mt-10">
         <label className="text-sm font-semibold text-ink-900">Enter Medication for Safety Review</label>
         <div className="mt-2 flex gap-3 flex-wrap">
-          <input
+          <MedicineAutocomplete
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={setInput}
+            onSelect={(name) => runAnalysis(name)}
             placeholder="Search or enter medication name…"
-            className="flex-1 min-w-[220px] rounded-xl border border-slate-200 px-4 py-3"
+            className="flex-1 min-w-[220px]"
+            inputClassName="w-full rounded-xl border border-slate-200 px-4 py-3"
           />
           <button
             onClick={() => runAnalysis(input)}

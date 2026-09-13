@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { supabase } from '../lib/supabaseClient'
 import { analyzeMedication } from '../lib/medicationSafety'
+import MedicineAutocomplete from '../components/MedicineAutocomplete'
 import SmartHealthCard from '../components/SmartHealthCard'
 
 const GENDER_OPTIONS = ['Female', 'Male', 'Other', 'Prefer not to say']
@@ -645,12 +646,12 @@ export default function PatientProfile() {
 
             {showMedForm && (
               <form onSubmit={addMedication} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
-                <input
+                <MedicineAutocomplete
                   required
-                  placeholder={t('Medicine name')}
                   value={medForm.name}
-                  onChange={(e) => { setMedForm({ ...medForm, name: e.target.value }); setMedPreview(null) }}
-                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+                  onChange={(v) => { setMedForm({ ...medForm, name: v }); setMedPreview(null) }}
+                  placeholder={t('Medicine name')}
+                  inputClassName="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
                 />
                 <input placeholder={t('Dose (e.g. 500mg)')} value={medForm.dose} onChange={(e) => setMedForm({ ...medForm, dose: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
                 <input placeholder={t('Frequency (e.g. Twice daily)')} value={medForm.frequency} onChange={(e) => setMedForm({ ...medForm, frequency: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
