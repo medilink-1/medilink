@@ -478,3 +478,130 @@ alter table medication_doses enable row level security;
 
 create policy "Own medication doses only" on medication_doses for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- =========================================================
+-- 16. Activity / access log
+--     A simple, patient-visible record of who/what touched their
+--     account: profile edits made from inside the app, and every time
+--     one of their share links (including the Emergency QR) was
+--     viewed or had a failed PIN attempt. Read-only from the app's
+--     point of view -- nothing lets a row here be edited or deleted,
+--     short of the whole account being deleted (it cascades away with
+--     the rest of the patient's data via the same foreign key as
+--     every other table). Run this block once in the Supabase SQL
+--     editor to enable the "Activity & Access Log" section on the
+--     Data & Privacy page.
+-- =========================================================
+create table if not exists activity_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles (id) on delete cascade not null,
+  event_type text not null,
+  detail text,
+  created_at timestamptz default now()
+);
+
+alter table activity_log enable row level security;
+
+-- Patients can read their own log and insert their own client-side
+-- events (e.g. "profile updated"). Deliberately narrower than the
+-- "for all" policy used elsewhere: nothing may update or delete a row
+-- from the client, so a patient can't quietly erase their own
+-- history from the browser console.
+create policy "Own activity log is readable" on activity_log for select
+  using (auth.uid() = user_id);
+create policy "Own activity log is insertable" on activity_log for insert
+  with check (auth.uid() = user_id);
+
+-- Re-declares get_shared_health_summary (same signature as block 14)
+-- to also record an activity_log entry for every real access attempt:
+-- a successful view, and a failed PIN attempt. It never logs the PIN
+-- itself. This still runs as SECURITY DEFINER, so it can write to
+-- activity_log on behalf of an anonymous visitor who has no MediLink
+-- account of their own -- exactly how it already reads profiles,
+-- allergies, conditions and medications despite RLS.
+create or replace function get_shared_health_summary(p_token text, p_pin text default null)
+returns json
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_link share_links%rowtype;
+  v_result json;
+  v_kind text;
+begin
+  select * into v_link from share_links
+    where token = p_token and revoked = false and expires_at > now();
+
+  if not found then
+    return json_build_object('status', 'not_found');
+  end if;
+
+  v_kind := case when v_link.label = '__emergency_qr__' then 'emergency_qr' else 'share_link' end;
+
+  if v_link.locked_until is not null and v_link.locked_until > now() then
+    return json_build_object('status', 'locked', 'locked_until', v_link.locked_until);
+  end if;
+
+  if v_link.pin_hash is not null then
+    if p_pin is null or p_pin = '' then
+      return json_build_object(
+        'status', 'pin_required',
+        'label', nullif(v_link.label, '__emergency_qr__')
+      );
+    end if;
+
+    if crypt(p_pin, v_link.pin_hash) <> v_link.pin_hash then
+      update share_links set
+        failed_attempts = failed_attempts + 1,
+        locked_until = case when failed_attempts + 1 >= 5 then now() + interval '15 minutes' else locked_until end
+        where id = v_link.id;
+
+      insert into activity_log (user_id, event_type, detail)
+      values (v_link.user_id, v_kind || '_pin_failed', nullif(v_link.label, '__emergency_qr__'));
+
+      return json_build_object(
+        'status', 'invalid_pin',
+        'attempts_left', greatest(0, 5 - (v_link.failed_attempts + 1))
+      );
+    end if;
+
+    update share_links set failed_attempts = 0, locked_until = null where id = v_link.id;
+  end if;
+
+  insert into activity_log (user_id, event_type, detail)
+  values (v_link.user_id, v_kind || '_viewed', nullif(v_link.label, '__emergency_qr__'));
+
+  select json_build_object(
+    'status', 'ok',
+    'profile', (
+      select json_build_object(
+        'full_name', full_name, 'age', age, 'gender', gender,
+        'blood_group', blood_group, 'health_id', health_id,
+        'emergency_name', emergency_name, 'emergency_relation', emergency_relation,
+        'emergency_phone', emergency_phone
+      )
+      from profiles where id = v_link.user_id
+    ),
+    'allergies', (
+      select coalesce(json_agg(json_build_object('name', name, 'severity', severity)), '[]'::json)
+      from allergies where user_id = v_link.user_id
+    ),
+    'conditions', (
+      select coalesce(json_agg(json_build_object('name', name)), '[]'::json)
+      from conditions where user_id = v_link.user_id
+    ),
+    'medications', (
+      select coalesce(json_agg(json_build_object('name', name, 'dose', dose, 'frequency', frequency, 'status', status)), '[]'::json)
+      from medications where user_id = v_link.user_id and status = 'active'
+    ),
+    'label', nullif(v_link.label, '__emergency_qr__'),
+    'expires_at', v_link.expires_at
+  ) into v_result;
+
+  return v_result;
+end;
+$$;
+
+revoke all on function get_shared_health_summary(text, text) from public;
+grant execute on function get_shared_health_summary(text, text) to anon, authenticated;

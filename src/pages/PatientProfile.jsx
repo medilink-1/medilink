@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabaseClient'
 import { analyzeMedication } from '../lib/medicationSafety'
 import MedicineAutocomplete from '../components/MedicineAutocomplete'
 import SmartHealthCard from '../components/SmartHealthCard'
+import { logActivity } from '../lib/activityLog'
 
 const GENDER_OPTIONS = ['Female', 'Male', 'Other', 'Prefer not to say']
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
@@ -146,6 +147,7 @@ export default function PatientProfile() {
     setNewShareUrl(`${window.location.origin}${import.meta.env.BASE_URL}shared/${token}`)
     setCopied(false)
     await loadShareLinks()
+    await logActivity(user.id, 'share_link_created', shareLabel || null)
   }
 
   async function handleRevokeShareLink(link) {
@@ -153,6 +155,7 @@ export default function PatientProfile() {
     await supabase.from('share_links').update({ revoked: true }).eq('id', link.id)
     if (newShareUrl.includes(link.token)) setNewShareUrl('')
     await loadShareLinks()
+    await logActivity(user.id, 'share_link_revoked', link.label || null)
   }
 
   async function copyShareUrl(url) {
@@ -195,12 +198,14 @@ export default function PatientProfile() {
     setQrPinConfirm('')
     setShowQrPinForm(false)
     await p.reload()
+    await logActivity(user.id, 'emergency_qr_created')
   }
 
   async function handleRevokeEmergencyQr() {
     if (!window.confirm('Turn off your Emergency QR code? The QR on your Smart Health Card will stop working until you set a new PIN.')) return
     await supabase.rpc('revoke_emergency_qr_link')
     await p.reload()
+    await logActivity(user.id, 'emergency_qr_revoked')
   }
 
   function startEdit() {
@@ -249,6 +254,7 @@ export default function PatientProfile() {
     await refreshProfile()
     setEditing(false)
     setForm(null)
+    await logActivity(user.id, 'profile_updated')
   }
 
   // Actually writes the new medication to the patient's record. Split out

@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Download, FileText, Trash2, AlertTriangle, Loader2, ShieldAlert } from 'lucide-react'
+import { Download, FileText, Trash2, AlertTriangle, Loader2, ShieldAlert, History } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { usePatientData } from '../lib/usePatientData'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { supabase } from '../lib/supabaseClient'
+import { describeActivity } from '../lib/activityLog'
 
 // A single place for the two data-ownership actions every patient
 // should have: getting a full copy of their own record, and
@@ -36,6 +37,7 @@ export default function PrivacyData() {
       insurance_policies: p.insurancePolicies,
       insurance_claims: p.insuranceClaims,
       timeline_events: p.timelineEvents,
+      activity_log: p.activityLog,
     }
   }
 
@@ -134,6 +136,31 @@ export default function PrivacyData() {
           <p>{t('Hospital Visit')}: <span className="font-semibold text-ink-900">{p.hospitalVisits.length}</span></p>
           <p>{t('Child Vaccination')}: <span className="font-semibold text-ink-900">{p.vaccinations.length}</span></p>
           <p>{t('Medical Insurance')}: <span className="font-semibold text-ink-900">{p.insurancePolicies.length}</span></p>
+        </div>
+      </section>
+
+      {/* Activity & access log */}
+      <section className="print:hidden mt-8 rounded-2xl border border-slate-100 p-6">
+        <h2 className="font-bold text-ink-900 flex items-center gap-2">
+          <History size={18} className="text-brand-600" /> {t('Activity & Access Log')}
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">
+          {t('Profile changes and every time one of your share links (including your Emergency QR) was viewed or had a failed PIN attempt.')}
+        </p>
+        <div className="mt-4 flex flex-col divide-y divide-slate-100">
+          {p.activityLog.length === 0 ? (
+            <p className="text-sm text-slate-400">{t('No activity recorded yet.')}</p>
+          ) : (
+            p.activityLog.map((entry) => (
+              <div key={entry.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
+                <span className="text-ink-900">
+                  {t(describeActivity(entry))}
+                  {entry.detail && <span className="text-slate-400"> · {entry.detail}</span>}
+                </span>
+                <span className="text-xs text-slate-400 shrink-0">{new Date(entry.created_at).toLocaleString()}</span>
+              </div>
+            ))
+          )}
         </div>
       </section>
 

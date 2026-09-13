@@ -20,6 +20,7 @@ export function usePatientData() {
     insuranceClaims: [],
     timelineEvents: [],
     medicationDoses: [],
+    activityLog: [],
     emergencyQrLink: null,
   })
   const [loading, setLoading] = useState(true)
@@ -40,6 +41,7 @@ export function usePatientData() {
       insuranceClaims,
       timelineEvents,
       medicationDoses,
+      activityLog,
       emergencyQrLink,
     ] = await Promise.all([
       supabase.from('conditions').select('*').order('created_at'),
@@ -57,6 +59,7 @@ export function usePatientData() {
         .from('medication_doses')
         .select('*')
         .gte('dose_date', new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)),
+      supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(30),
       supabase
         .from('share_links')
         .select('token, expires_at')
@@ -124,6 +127,7 @@ export function usePatientData() {
       insuranceClaims: insuranceClaims.data || [],
       timelineEvents: allTimelineEvents,
       medicationDoses: medicationDoses.data || [],
+      activityLog: activityLog.data || [],
       emergencyQrLink: emergencyQrLink.data || null,
     })
     setLoading(false)

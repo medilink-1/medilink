@@ -387,4 +387,19 @@ export const HI = {
   'Permanently Delete My Data': 'मेरा डेटा स्थायी रूप से हटाएं',
   'Consider exporting your data above before deleting it.': 'हटाने से पहले ऊपर अपना डेटा निर्यात करने पर विचार करें।',
   'Something went wrong deleting your data. Please try again.': 'आपका डेटा हटाने में कुछ गलत हो गया। कृपया फिर से प्रयास करें।',
+
+  // Activity & Access Log
+  'Activity & Access Log': 'गतिविधि और पहुंच लॉग',
+  'Profile changes and every time one of your share links (including your Emergency QR) was viewed or had a failed PIN attempt.':
+    'प्रोफ़ाइल में बदलाव और हर बार जब आपके किसी शेयर लिंक (आपके इमरजेंसी QR सहित) को देखा गया या उसमें गलत पिन डाला गया।',
+  'No activity recorded yet.': 'अभी तक कोई गतिविधि दर्ज नहीं हुई है।',
+  'Profile updated': 'प्रोफ़ाइल अपडेट की गई',
+  'Share link created': 'शेयर लिंक बनाया गया',
+  'Share link revoked': 'शेयर लिंक रद्द किया गया',
+  'Share link viewed': 'शेयर लिंक देखा गया',
+  'Share link: incorrect PIN entered': 'शेयर लिंक: गलत पिन डाला गया',
+  'Emergency QR PIN set': 'इमरजेंसी QR पिन सेट किया गया',
+  'Emergency QR turned off': 'इमरजेंसी QR बंद किया गया',
+  'Emergency QR viewed': 'इमरजेंसी QR देखा गया',
+  'Emergency QR: incorrect PIN entered': 'इमरजेंसी QR: गलत पिन डाला गया',
 }
