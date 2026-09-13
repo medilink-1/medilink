@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe, Pill, ShieldCheck } from 'lucide-react'
+import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe, Pill, ShieldCheck, BellRing } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { supabase } from '../lib/supabaseClient'
 import { getMedicationReminders } from '../lib/medicationReminders'
+import {
+  isNotificationSupported,
+  getNotificationPreference,
+  setNotificationPreference,
+  requestNotificationPermission,
+  notifyNewReminders,
+} from '../lib/browserNotifications'
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -20,6 +27,10 @@ export default function Navbar() {
   const [notifOpen, setNotifOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
+  const [notifPref, setNotifPref] = useState(() => getNotificationPreference())
+  const [notifBlocked, setNotifBlocked] = useState(
+    () => isNotificationSupported() && Notification.permission === 'denied'
+  )
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -49,7 +60,9 @@ export default function Navbar() {
           v.status === 'due_soon' ? 'due soon' : 'scheduled'
         }${v.event_date ? ` (${new Date(v.event_date).toLocaleDateString()})` : ''}.`,
       }))
-      setNotifications([...medItems, ...vaxItems])
+      const allItems = [...medItems, ...vaxItems]
+      setNotifications(allItems)
+      notifyNewReminders(allItems)
     }
 
     loadNotifications()
@@ -57,6 +70,21 @@ export default function Navbar() {
       cancelled = true
     }
   }, [user])
+
+  const handleToggleNotifPref = async () => {
+    if (notifPref) {
+      setNotifPref(false)
+      setNotificationPreference(false)
+      return
+    }
+    const permission = await requestNotificationPermission()
+    if (permission === 'granted') {
+      setNotifPref(true)
+      setNotificationPreference(true)
+    } else {
+      setNotifBlocked(permission === 'denied')
+    }
+  }
 
   const handleSignOut = async () => {
     await signOut()
@@ -139,6 +167,23 @@ export default function Navbar() {
                       </li>
                     ))}
                   </ul>
+                )}
+                {isNotificationSupported() && (
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={handleToggleNotifPref}
+                      disabled={notifBlocked}
+                      className="w-full flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <BellRing size={13} />
+                      {notifBlocked
+                        ? t('Notifications blocked in browser settings')
+                        : notifPref
+                        ? t('Desktop notifications on -- tap to turn off')
+                        : t('Turn on desktop notifications for reminders')}
+                    </button>
+                  </div>
                 )}
               </div>
             )}
