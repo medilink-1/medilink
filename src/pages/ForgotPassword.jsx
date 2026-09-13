@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import { useLanguage } from '../context/LanguageContext'
 
 export default function ForgotPassword() {
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle') // idle | sending | sent | error
   const [error, setError] = useState('')
@@ -23,17 +25,17 @@ export default function ForgotPassword() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-20">
-      <h1 className="text-3xl font-extrabold text-ink-900">Reset your password</h1>
-      <p className="mt-2 text-slate-500">Enter your account email and we'll send you a password reset link.</p>
+      <h1 className="text-3xl font-extrabold text-ink-900">{t('Reset your password')}</h1>
+      <p className="mt-2 text-slate-500">{t("Enter your account email and we'll send you a password reset link.")}</p>
 
       {status === 'sent' ? (
         <div className="mt-8 rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-sm text-emerald-700">
-          If an account exists for <span className="font-semibold">{email}</span>, a password reset link has been sent. Check your inbox.
+          {t('If an account exists for')} <span className="font-semibold">{email}</span>{t(', a password reset link has been sent. Check your inbox.')}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-ink-900">Email</span>
+            <span className="text-sm font-medium text-ink-900">{t('Email')}</span>
             <input
               type="email"
               required
@@ -51,13 +53,13 @@ export default function ForgotPassword() {
             disabled={status === 'sending'}
             className="mt-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold py-3 rounded-full transition-colors"
           >
-            {status === 'sending' ? 'Sending…' : 'Send reset link'}
+            {status === 'sending' ? t('Sending…') : t('Send reset link')}
           </button>
         </form>
       )}
 
       <p className="mt-6 text-sm text-slate-500">
-        <Link to="/login" className="text-brand-600 font-semibold">Back to sign in</Link>
+        <Link to="/login" className="text-brand-600 font-semibold">{t('Back to sign in')}</Link>
       </p>
     </div>
   )

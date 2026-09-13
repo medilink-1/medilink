@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { usePatientData } from '../lib/usePatientData'
 import { analyzeMedication } from '../lib/medicationSafety'
 import MedicineAutocomplete from '../components/MedicineAutocomplete'
+import { useLanguage } from '../context/LanguageContext'
 
 const quickSelect = ['Amoxicillin', 'Ibuprofen', 'Metformin', 'Amlodipine', 'Atorvastatin', 'Warfarin']
 
@@ -15,6 +16,7 @@ const riskStyles = {
 }
 
 export default function MedicationSafety() {
+  const { t } = useLanguage()
   const p = usePatientData()
   const [input, setInput] = useState('')
   const [report, setReport] = useState(null)
@@ -33,33 +35,33 @@ export default function MedicationSafety() {
   if (p.loading) {
     return (
       <div className="max-w-5xl mx-auto px-6 py-20 flex items-center gap-2 text-slate-400">
-        <Loader2 className="animate-spin" size={18} /> Loading medication safety dashboard…
+        <Loader2 className="animate-spin" size={18} /> {t('Loading medication safety dashboard…')}
       </div>
     )
   }
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-14">
-      <h1 className="text-3xl font-extrabold text-ink-900">Medication Safety Intelligence</h1>
-      <p className="mt-2 text-slate-500">Patient-specific medication review at the point of care.</p>
+      <h1 className="text-3xl font-extrabold text-ink-900">{t('Medication Safety Intelligence')}</h1>
+      <p className="mt-2 text-slate-500">{t('Patient-specific medication review at the point of care.')}</p>
 
       {/* Patient context panel */}
       <div className="mt-8 rounded-2xl border border-teal-100 bg-teal-50/40 p-6 grid sm:grid-cols-2 gap-6">
         <div>
-          <p className="text-xs font-bold text-slate-400 flex items-center gap-1.5"><User size={13}/> PATIENT</p>
+          <p className="text-xs font-bold text-slate-400 flex items-center gap-1.5"><User size={13}/> {t('PATIENT')}</p>
           <p className="mt-1 font-bold text-ink-900">{p.profile?.full_name}</p>
           <p className="text-sm text-slate-500">{p.profile?.age ? `${p.profile.age} Years` : '—'}</p>
         </div>
         <div>
-          <p className="text-xs font-bold text-slate-400">CRITICAL CONDITIONS</p>
+          <p className="text-xs font-bold text-slate-400">{t('CRITICAL CONDITIONS')}</p>
           <p className="mt-1 text-sm text-ink-900">{p.conditions.map((c) => c.name).join(' · ') || '—'}</p>
-          <p className="mt-2 text-xs font-bold text-red-600">ALLERGY</p>
+          <p className="mt-2 text-xs font-bold text-red-600">{t('Allergy').toUpperCase()}</p>
           <p className="text-sm font-semibold text-red-700">
-            {p.allergies.map((a) => `⚠ ${a.name}`).join(', ') || 'None recorded'}
+            {p.allergies.map((a) => `⚠ ${a.name}`).join(', ') || t('None recorded')}
           </p>
         </div>
         <div className="sm:col-span-2">
-          <p className="text-xs font-bold text-slate-400">CURRENT MEDICATIONS</p>
+          <p className="text-xs font-bold text-slate-400">{t('CURRENT MEDICATIONS')}</p>
           <p className="mt-1 text-sm text-ink-900">
             {p.medications.filter((m) => m.status === 'active').map((m) => m.name).join(' · ') || '—'}
           </p>
@@ -68,13 +70,13 @@ export default function MedicationSafety() {
 
       {/* Medication entry */}
       <div className="mt-10">
-        <label className="text-sm font-semibold text-ink-900">Enter Medication for Safety Review</label>
+        <label className="text-sm font-semibold text-ink-900">{t('Enter Medication for Safety Review')}</label>
         <div className="mt-2 flex gap-3 flex-wrap">
           <MedicineAutocomplete
             value={input}
             onChange={setInput}
             onSelect={(name) => runAnalysis(name)}
-            placeholder="Search or enter medication name…"
+            placeholder={t('Search or enter medication name…')}
             className="flex-1 min-w-[220px]"
             inputClassName="w-full rounded-xl border border-slate-200 px-4 py-3"
           />
@@ -82,7 +84,7 @@ export default function MedicationSafety() {
             onClick={() => runAnalysis(input)}
             className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full"
           >
-            Run Safety Analysis
+            {t('Run Safety Analysis')}
           </button>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -104,17 +106,17 @@ export default function MedicationSafety() {
       {/* Safety report */}
       {report && (
         <div className="mt-10 rounded-3xl border border-slate-100 p-8">
-          <p className="text-xs font-bold text-slate-400">MEDICATION SAFETY REPORT</p>
+          <p className="text-xs font-bold text-slate-400">{t('MEDICATION SAFETY REPORT')}</p>
           <p className="text-2xl font-bold text-ink-900 mt-1">{report.medicine}</p>
 
-          <p className="mt-6 text-xs font-bold text-slate-400">PATIENT-SPECIFIC ANALYSIS</p>
+          <p className="mt-6 text-xs font-bold text-slate-400">{t('PATIENT-SPECIFIC ANALYSIS')}</p>
           <div className="mt-3 flex flex-col gap-3">
             {report.checks.map((c, i) => (
               <div key={i} className="border border-slate-100 rounded-2xl p-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <p className="font-semibold text-ink-900 text-sm">{i + 1}. {c.title}</p>
+                  <p className="font-semibold text-ink-900 text-sm">{i + 1}. {t(c.title)}</p>
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
-                    {c.status}
+                    {t(c.status)}
                   </span>
                 </div>
                 <p className="text-sm text-slate-600 mt-1.5">{c.result}</p>
@@ -124,32 +126,31 @@ export default function MedicationSafety() {
           </div>
 
           <div className={`mt-8 rounded-2xl border p-6 ${riskStyles[report.overallRisk]}`}>
-            <p className="text-xs font-bold">OVERALL RISK: {report.overallRisk}</p>
+            <p className="text-xs font-bold">{t('OVERALL RISK')}: {t(report.overallRisk)}</p>
             <p className="mt-2 text-sm font-medium">{report.summaryMessage}</p>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link to="/profile" className="border border-slate-200 font-semibold text-sm px-5 py-2.5 rounded-full">
-              Review Patient Profile
+              {t('Review Patient Profile')}
             </Link>
             <button
               onClick={() => { setReport(null); setInput('') }}
               className="inline-flex items-center gap-1.5 border border-slate-200 font-semibold text-sm px-5 py-2.5 rounded-full"
             >
-              <RefreshCw size={14} /> Modify Medication
+              <RefreshCw size={14} /> {t('Modify Medication')}
             </button>
             <button
               onClick={() => window.print()}
               className="inline-flex items-center gap-1.5 border border-slate-200 font-semibold text-sm px-5 py-2.5 rounded-full"
             >
-              <Printer size={14} /> Print Safety Report
+              <Printer size={14} /> {t('Print Safety Report')}
             </button>
           </div>
 
           <p className="mt-6 text-xs text-slate-400 flex items-start gap-1.5">
             <AlertTriangle size={13} className="mt-0.5 shrink-0" />
-            This prototype provides clinical decision support only and does not replace professional
-            medical judgment.
+            {t('This prototype provides clinical decision support only and does not replace professional medical judgment.')}
           </p>
         </div>
       )}

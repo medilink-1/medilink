@@ -3,6 +3,7 @@ import { ShieldCheck, Loader2, ReceiptText, Plus, Pencil, Trash2, Check, X } fro
 import { usePatientData } from '../lib/usePatientData'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
+import { useLanguage } from '../context/LanguageContext'
 
 const statusStyles = {
   active: 'bg-emerald-50 text-emerald-700',
@@ -21,6 +22,7 @@ const emptyClaimForm = { claim_ref: '', hospital_name: '', amount: '', status: '
 
 export default function MedicalInsurance() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const p = usePatientData()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyPolicyForm)
@@ -133,36 +135,36 @@ export default function MedicalInsurance() {
   }
 
   if (p.loading) {
-    return <div className="max-w-4xl mx-auto px-6 py-20 flex items-center gap-2 text-slate-400"><Loader2 className="animate-spin" size={18}/> Loading insurance details…</div>
+    return <div className="max-w-4xl mx-auto px-6 py-20 flex items-center gap-2 text-slate-400"><Loader2 className="animate-spin" size={18}/> {t('Loading insurance details…')}</div>
   }
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-14">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-extrabold text-ink-900">Medical Insurance</h1>
-          <p className="mt-2 text-slate-500">Healthcare coverage and insurance information.</p>
+          <h1 className="text-3xl font-extrabold text-ink-900">{t('Medical Insurance')}</h1>
+          <p className="mt-2 text-slate-500">{t('Healthcare coverage and insurance information.')}</p>
         </div>
         <button onClick={() => setShowForm((v) => !v)} className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-3 rounded-full">
-          <Plus size={18} /> Add Policy
+          <Plus size={18} /> {t('Add Policy')}
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleAdd} className="mt-8 border border-slate-100 rounded-2xl p-6 grid sm:grid-cols-2 gap-4">
-          <input required placeholder="Insurance provider" value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 sm:col-span-2" />
-          <input placeholder="Policy number" value={form.policy_number} onChange={(e) => setForm({ ...form, policy_number: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
-          <input placeholder="Policy type (e.g. Family Floater)" value={form.policy_type} onChange={(e) => setForm({ ...form, policy_type: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
-          <input type="number" placeholder="Coverage amount (₹)" value={form.coverage_amount} onChange={(e) => setForm({ ...form, coverage_amount: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
+          <input required placeholder={t('Insurance provider')} value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 sm:col-span-2" />
+          <input placeholder={t('Policy number')} value={form.policy_number} onChange={(e) => setForm({ ...form, policy_number: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
+          <input placeholder={t('Policy type (e.g. Family Floater)')} value={form.policy_type} onChange={(e) => setForm({ ...form, policy_type: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
+          <input type="number" placeholder={t('Coverage amount (₹)')} value={form.coverage_amount} onChange={(e) => setForm({ ...form, coverage_amount: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
           <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 bg-white">
-            <option value="active">Active</option>
-            <option value="expired">Expired</option>
+            <option value="active">{t('Active')}</option>
+            <option value="expired">{t('Expired')}</option>
           </select>
           <div className="sm:col-span-2 flex gap-3">
             <button type="submit" disabled={saving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-full">
-              {saving ? 'Saving…' : 'Save policy'}
+              {saving ? t('Saving…') : t('Save policy')}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="text-slate-500 font-medium px-5 py-2.5">Cancel</button>
+            <button type="button" onClick={() => setShowForm(false)} className="text-slate-500 font-medium px-5 py-2.5">{t('Cancel')}</button>
           </div>
         </form>
       )}
@@ -170,7 +172,7 @@ export default function MedicalInsurance() {
       <div className="mt-8 flex flex-col gap-6">
         {p.insurancePolicies.length === 0 ? (
           <div className="text-center py-16 border border-dashed border-slate-200 rounded-2xl text-slate-400">
-            No insurance policy on file.
+            {t('No insurance policy on file.')}
           </div>
         ) : (
           p.insurancePolicies.map((policy) =>
@@ -180,20 +182,20 @@ export default function MedicalInsurance() {
                 onSubmit={(e) => { e.preventDefault(); saveEditPolicy(policy.id) }}
                 className="border border-slate-100 rounded-2xl p-6 grid sm:grid-cols-2 gap-4"
               >
-                <input required placeholder="Insurance provider" value={editPolicyForm.provider} onChange={(e) => setEditPolicyForm({ ...editPolicyForm, provider: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 sm:col-span-2" />
-                <input placeholder="Policy number" value={editPolicyForm.policy_number} onChange={(e) => setEditPolicyForm({ ...editPolicyForm, policy_number: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
-                <input placeholder="Policy type" value={editPolicyForm.policy_type} onChange={(e) => setEditPolicyForm({ ...editPolicyForm, policy_type: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
-                <input type="number" placeholder="Coverage amount (₹)" value={editPolicyForm.coverage_amount} onChange={(e) => setEditPolicyForm({ ...editPolicyForm, coverage_amount: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
+                <input required placeholder={t('Insurance provider')} value={editPolicyForm.provider} onChange={(e) => setEditPolicyForm({ ...editPolicyForm, provider: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 sm:col-span-2" />
+                <input placeholder={t('Policy number')} value={editPolicyForm.policy_number} onChange={(e) => setEditPolicyForm({ ...editPolicyForm, policy_number: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
+                <input placeholder={t('Policy type')} value={editPolicyForm.policy_type} onChange={(e) => setEditPolicyForm({ ...editPolicyForm, policy_type: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
+                <input type="number" placeholder={t('Coverage amount (₹)')} value={editPolicyForm.coverage_amount} onChange={(e) => setEditPolicyForm({ ...editPolicyForm, coverage_amount: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3" />
                 <select value={editPolicyForm.status} onChange={(e) => setEditPolicyForm({ ...editPolicyForm, status: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 bg-white">
-                  <option value="active">Active</option>
-                  <option value="expired">Expired</option>
+                  <option value="active">{t('Active')}</option>
+                  <option value="expired">{t('Expired')}</option>
                 </select>
                 <div className="sm:col-span-2 flex gap-3">
                   <button type="submit" disabled={policyRowSaving} className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-full">
-                    <Check size={16} /> Save
+                    <Check size={16} /> {t('Save')}
                   </button>
                   <button type="button" onClick={() => setEditingPolicyId(null)} className="inline-flex items-center gap-1.5 text-slate-500 font-medium px-5 py-2.5">
-                    <X size={16} /> Cancel
+                    <X size={16} /> {t('Cancel')}
                   </button>
                 </div>
               </form>
@@ -207,10 +209,10 @@ export default function MedicalInsurance() {
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${statusStyles[policy.status] || statusStyles.active}`}>
                       {policy.status}
                     </span>
-                    <button type="button" onClick={() => startEditPolicy(policy)} className="p-1 text-slate-400 hover:text-brand-600" title="Edit policy">
+                    <button type="button" onClick={() => startEditPolicy(policy)} className="p-1 text-slate-400 hover:text-brand-600" title={t('Edit')}>
                       <Pencil size={14} />
                     </button>
-                    <button type="button" onClick={() => deletePolicy(policy)} className="p-1 text-slate-400 hover:text-red-600" title="Delete policy">
+                    <button type="button" onClick={() => deletePolicy(policy)} className="p-1 text-slate-400 hover:text-red-600" title={t('Delete')}>
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -218,45 +220,45 @@ export default function MedicalInsurance() {
 
                 <div className="mt-4 grid sm:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="text-xs text-slate-400">Policy Number</p>
+                    <p className="text-xs text-slate-400">{t('Policy Number')}</p>
                     <p className="font-semibold text-ink-900">{policy.policy_number}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400">Policy Type</p>
+                    <p className="text-xs text-slate-400">{t('Policy Type')}</p>
                     <p className="font-semibold text-ink-900">{policy.policy_type}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400">Coverage</p>
+                    <p className="text-xs text-slate-400">{t('Coverage')}</p>
                     <p className="font-semibold text-ink-900">{formatINR(policy.coverage_amount)}</p>
                   </div>
                 </div>
 
                 <div className="mt-6 flex items-center justify-between">
-                  <p className="text-xs font-bold text-slate-400">CLAIMS HISTORY</p>
+                  <p className="text-xs font-bold text-slate-400">{t('CLAIMS HISTORY')}</p>
                   <button
                     type="button"
                     onClick={() => { setOpenClaimFor(openClaimFor === policy.id ? null : policy.id); setClaimForm(emptyClaimForm) }}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
                   >
-                    <Plus size={13} /> Add Claim
+                    <Plus size={13} /> {t('Add Claim')}
                   </button>
                 </div>
 
                 {openClaimFor === policy.id && (
                   <form onSubmit={(e) => handleAddClaim(e, policy.id)} className="mt-3 border border-slate-100 rounded-xl p-4 grid sm:grid-cols-2 gap-3">
-                    <input placeholder="Claim reference" value={claimForm.claim_ref} onChange={(e) => setClaimForm({ ...claimForm, claim_ref: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-                    <input placeholder="Hospital name" value={claimForm.hospital_name} onChange={(e) => setClaimForm({ ...claimForm, hospital_name: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-                    <input type="number" placeholder="Amount (₹)" value={claimForm.amount} onChange={(e) => setClaimForm({ ...claimForm, amount: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                    <input placeholder={t('Claim reference')} value={claimForm.claim_ref} onChange={(e) => setClaimForm({ ...claimForm, claim_ref: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                    <input placeholder={t('Hospital name')} value={claimForm.hospital_name} onChange={(e) => setClaimForm({ ...claimForm, hospital_name: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                    <input type="number" placeholder={t('Amount (₹)')} value={claimForm.amount} onChange={(e) => setClaimForm({ ...claimForm, amount: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
                     <select value={claimForm.status} onChange={(e) => setClaimForm({ ...claimForm, status: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
-                      <option value="submitted">Submitted</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
+                      <option value="submitted">{t('Submitted')}</option>
+                      <option value="approved">{t('Approved')}</option>
+                      <option value="rejected">{t('Rejected')}</option>
                     </select>
                     <div className="sm:col-span-2 flex gap-3">
                       <button type="submit" disabled={claimSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
-                        {claimSaving ? 'Saving…' : 'Save claim'}
+                        {claimSaving ? t('Saving…') : t('Save claim')}
                       </button>
-                      <button type="button" onClick={() => setOpenClaimFor(null)} className="text-slate-500 text-sm font-medium px-5 py-2">Cancel</button>
+                      <button type="button" onClick={() => setOpenClaimFor(null)} className="text-slate-500 text-sm font-medium px-5 py-2">{t('Cancel')}</button>
                     </div>
                   </form>
                 )}
@@ -269,20 +271,20 @@ export default function MedicalInsurance() {
                         onSubmit={(e) => { e.preventDefault(); saveEditClaim(claim.id) }}
                         className="border border-slate-100 rounded-xl p-4 grid sm:grid-cols-2 gap-3"
                       >
-                        <input placeholder="Claim reference" value={editClaimForm.claim_ref} onChange={(e) => setEditClaimForm({ ...editClaimForm, claim_ref: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-                        <input placeholder="Hospital name" value={editClaimForm.hospital_name} onChange={(e) => setEditClaimForm({ ...editClaimForm, hospital_name: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-                        <input type="number" placeholder="Amount (₹)" value={editClaimForm.amount} onChange={(e) => setEditClaimForm({ ...editClaimForm, amount: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                        <input placeholder={t('Claim reference')} value={editClaimForm.claim_ref} onChange={(e) => setEditClaimForm({ ...editClaimForm, claim_ref: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                        <input placeholder={t('Hospital name')} value={editClaimForm.hospital_name} onChange={(e) => setEditClaimForm({ ...editClaimForm, hospital_name: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                        <input type="number" placeholder={t('Amount (₹)')} value={editClaimForm.amount} onChange={(e) => setEditClaimForm({ ...editClaimForm, amount: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" />
                         <select value={editClaimForm.status} onChange={(e) => setEditClaimForm({ ...editClaimForm, status: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
-                          <option value="submitted">Submitted</option>
-                          <option value="approved">Approved</option>
-                          <option value="rejected">Rejected</option>
+                          <option value="submitted">{t('Submitted')}</option>
+                          <option value="approved">{t('Approved')}</option>
+                          <option value="rejected">{t('Rejected')}</option>
                         </select>
                         <div className="sm:col-span-2 flex gap-3">
                           <button type="submit" disabled={claimRowSaving} className="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
-                            <Check size={14} /> Save
+                            <Check size={14} /> {t('Save')}
                           </button>
                           <button type="button" onClick={() => setEditingClaimId(null)} className="inline-flex items-center gap-1.5 text-slate-500 text-sm font-medium px-5 py-2">
-                            <X size={14} /> Cancel
+                            <X size={14} /> {t('Cancel')}
                           </button>
                         </div>
                       </form>
@@ -300,10 +302,10 @@ export default function MedicalInsurance() {
                           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${statusStyles[claim.status] || statusStyles.submitted}`}>
                             {claim.status}
                           </span>
-                          <button type="button" onClick={() => startEditClaim(claim)} className="p-1 text-slate-400 hover:text-brand-600" title="Edit claim">
+                          <button type="button" onClick={() => startEditClaim(claim)} className="p-1 text-slate-400 hover:text-brand-600" title={t('Edit')}>
                             <Pencil size={13} />
                           </button>
-                          <button type="button" onClick={() => deleteClaim(claim)} className="p-1 text-slate-400 hover:text-red-600" title="Delete claim">
+                          <button type="button" onClick={() => deleteClaim(claim)} className="p-1 text-slate-400 hover:text-red-600" title={t('Delete')}>
                             <Trash2 size={13} />
                           </button>
                         </div>
@@ -311,7 +313,7 @@ export default function MedicalInsurance() {
                     )
                   )}
                   {p.insuranceClaims.filter((c) => c.policy_id === policy.id).length === 0 && (
-                    <p className="text-sm text-slate-400">No claims filed yet.</p>
+                    <p className="text-sm text-slate-400">{t('No claims filed yet.')}</p>
                   )}
                 </div>
               </div>
