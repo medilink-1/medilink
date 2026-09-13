@@ -65,7 +65,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="border-b border-slate-100 bg-white/95 backdrop-blur sticky top-0 z-20">
+    <header className="print:hidden border-b border-slate-100 bg-white/95 backdrop-blur sticky top-0 z-20">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
           <span className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center">

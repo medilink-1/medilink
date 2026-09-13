@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2, Share2, Copy, Clock, Lock, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2, Share2, Copy, Clock, Lock, ShieldCheck, Save, FileWarning } from 'lucide-react'
 import { usePatientData } from '../lib/usePatientData'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { supabase } from '../lib/supabaseClient'
+import { analyzeMedication } from '../lib/medicationSafety'
 import SmartHealthCard from '../components/SmartHealthCard'
 
 const GENDER_OPTIONS = ['Female', 'Male', 'Other', 'Prefer not to say']
@@ -20,12 +21,23 @@ export default function PatientProfile() {
   const [showMedForm, setShowMedForm] = useState(false)
   const [medForm, setMedForm] = useState({ name: '', dose: '', frequency: '', duration: '', status: 'active' })
   const [medSaving, setMedSaving] = useState(false)
+  const [medPreview, setMedPreview] = useState(null)
+  const [editingMedId, setEditingMedId] = useState(null)
+  const [editMedForm, setEditMedForm] = useState({ dose: '', frequency: '', duration: '', status: 'active' })
+  const [editMedSaving, setEditMedSaving] = useState(false)
+  const [medDeletingId, setMedDeletingId] = useState(null)
   const [showCondForm, setShowCondForm] = useState(false)
   const [condName, setCondName] = useState('')
   const [condSaving, setCondSaving] = useState(false)
+  const [editingCondId, setEditingCondId] = useState(null)
+  const [editCondName, setEditCondName] = useState('')
+  const [condRowSaving, setCondRowSaving] = useState(false)
   const [showAllergyForm, setShowAllergyForm] = useState(false)
   const [allergyForm, setAllergyForm] = useState({ name: '', severity: 'high' })
   const [allergySaving, setAllergySaving] = useState(false)
+  const [editingAllergyId, setEditingAllergyId] = useState(null)
+  const [editAllergyForm, setEditAllergyForm] = useState({ name: '', severity: 'high' })
+  const [allergyRowSaving, setAllergyRowSaving] = useState(false)
   const [showLabForm, setShowLabForm] = useState(false)
   const [labForm, setLabForm] = useState({ test_name: '', value: '', unit: '', recorded_at: '' })
   const [labSaving, setLabSaving] = useState(false)
@@ -230,8 +242,10 @@ export default function PatientProfile() {
     setForm(null)
   }
 
-  async function addMedication(e) {
-    e.preventDefault()
+  // Actually writes the new medication to the patient's record. Split out
+  // from addMedication so the "Save Anyway" button on a safety alert can
+  // call it directly without re-running (and re-blocking on) the check.
+  async function doSaveMedication() {
     setMedSaving(true)
     await supabase.from('medications').insert({
       user_id: user.id,
@@ -239,11 +253,61 @@ export default function PatientProfile() {
       dose: medForm.dose || null,
       frequency: medForm.frequency || null,
       duration: medForm.duration || null,
-      status: medForm.status || 'active',
+      status: 'active',
     })
     setMedSaving(false)
     setMedForm({ name: '', dose: '', frequency: '', duration: '', status: 'active' })
+    setMedPreview(null)
     setShowMedForm(false)
+    await p.reload()
+  }
+
+  // Runs the same engine the Medication Safety page uses, at the moment a
+  // medicine is entered here -- rather than a patient having to remember to
+  // separately go run a check on another page. A clean (LOW risk) result
+  // saves immediately; anything else stops and shows the alert first, and
+  // saving only proceeds if the patient explicitly chooses "Save Anyway".
+  async function addMedication(e) {
+    e.preventDefault()
+    const preview = analyzeMedication(medForm.name, {
+      allergies: p.allergies,
+      conditions: p.conditions,
+      labResults: p.labResults,
+      medications: p.medications,
+    })
+    if (preview.overallRisk !== 'LOW') {
+      setMedPreview(preview)
+      return
+    }
+    await doSaveMedication()
+  }
+
+  function startEditMedication(m) {
+    setEditingMedId(m.id)
+    setEditMedForm({ dose: m.dose || '', frequency: m.frequency || '', duration: m.duration || '', status: m.status || 'active' })
+  }
+
+  async function saveEditMedication(id) {
+    setEditMedSaving(true)
+    await supabase
+      .from('medications')
+      .update({
+        dose: editMedForm.dose || null,
+        frequency: editMedForm.frequency || null,
+        duration: editMedForm.duration || null,
+        status: editMedForm.status || 'active',
+      })
+      .eq('id', id)
+    setEditMedSaving(false)
+    setEditingMedId(null)
+    await p.reload()
+  }
+
+  async function deleteMedication(m) {
+    if (!window.confirm(`Remove "${m.name}" from your medication list? This cannot be undone.`)) return
+    setMedDeletingId(m.id)
+    await supabase.from('medications').delete().eq('id', m.id)
+    setMedDeletingId(null)
     await p.reload()
   }
 
@@ -254,6 +318,26 @@ export default function PatientProfile() {
     setCondSaving(false)
     setCondName('')
     setShowCondForm(false)
+    await p.reload()
+  }
+
+  function startEditCondition(c) {
+    setEditingCondId(c.id)
+    setEditCondName(c.name)
+  }
+
+  async function saveEditCondition(id) {
+    if (!editCondName.trim()) return
+    setCondRowSaving(true)
+    await supabase.from('conditions').update({ name: editCondName.trim() }).eq('id', id)
+    setCondRowSaving(false)
+    setEditingCondId(null)
+    await p.reload()
+  }
+
+  async function deleteCondition(c) {
+    if (!window.confirm(`Remove "${c.name}" from your medical conditions? This cannot be undone.`)) return
+    await supabase.from('conditions').delete().eq('id', c.id)
     await p.reload()
   }
 
@@ -268,6 +352,29 @@ export default function PatientProfile() {
     setAllergySaving(false)
     setAllergyForm({ name: '', severity: 'high' })
     setShowAllergyForm(false)
+    await p.reload()
+  }
+
+  function startEditAllergy(a) {
+    setEditingAllergyId(a.id)
+    setEditAllergyForm({ name: a.name, severity: a.severity || 'high' })
+  }
+
+  async function saveEditAllergy(id) {
+    if (!editAllergyForm.name.trim()) return
+    setAllergyRowSaving(true)
+    await supabase
+      .from('allergies')
+      .update({ name: editAllergyForm.name.trim(), severity: editAllergyForm.severity || 'high' })
+      .eq('id', id)
+    setAllergyRowSaving(false)
+    setEditingAllergyId(null)
+    await p.reload()
+  }
+
+  async function deleteAllergy(a) {
+    if (!window.confirm(`Remove "${a.name}" from your drug allergies? This cannot be undone.`)) return
+    await supabase.from('allergies').delete().eq('id', a.id)
     await p.reload()
   }
 
@@ -401,14 +508,43 @@ export default function PatientProfile() {
               </form>
             )}
 
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {p.conditions.map((c) => (
-                <li key={c.id} className="text-sm font-medium bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full">
-                  {c.name}
-                </li>
-              ))}
+            <div className="mt-3 flex flex-col gap-2">
+              {p.conditions.map((c) =>
+                editingCondId === c.id ? (
+                  <form
+                    key={c.id}
+                    onSubmit={(e) => { e.preventDefault(); saveEditCondition(c.id) }}
+                    className="flex items-center gap-2 border border-slate-100 rounded-2xl px-4 py-2.5 flex-wrap"
+                  >
+                    <input
+                      autoFocus
+                      value={editCondName}
+                      onChange={(e) => setEditCondName(e.target.value)}
+                      className="flex-1 min-w-[160px] rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                    />
+                    <button type="submit" disabled={condRowSaving} className="p-1.5 text-emerald-600 hover:text-emerald-700" title={t('Save')}>
+                      <Check size={16} />
+                    </button>
+                    <button type="button" onClick={() => setEditingCondId(null)} className="p-1.5 text-slate-400 hover:text-slate-600" title={t('Cancel')}>
+                      <X size={16} />
+                    </button>
+                  </form>
+                ) : (
+                  <div key={c.id} className="flex items-center justify-between gap-3 bg-amber-50 rounded-full pl-3.5 pr-2 py-1.5">
+                    <span className="text-sm font-medium text-amber-700">{c.name}</span>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <button type="button" onClick={() => startEditCondition(c)} className="p-1 text-amber-700/60 hover:text-amber-800" title={t('Edit')}>
+                        <Pencil size={13} />
+                      </button>
+                      <button type="button" onClick={() => deleteCondition(c)} className="p-1 text-amber-700/60 hover:text-red-600" title={t('Delete')}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                )
+              )}
               {p.conditions.length === 0 && <p className="text-sm text-slate-400">{t('No conditions recorded.')}</p>}
-            </ul>
+            </div>
           </section>
 
           <section>
@@ -442,14 +578,52 @@ export default function PatientProfile() {
               </form>
             )}
 
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {p.allergies.map((a) => (
-                <li key={a.id} className="text-sm font-semibold bg-red-50 text-red-700 px-3 py-1.5 rounded-full">
-                  ⚠ {a.name}
-                </li>
-              ))}
+            <div className="mt-3 flex flex-col gap-2">
+              {p.allergies.map((a) =>
+                editingAllergyId === a.id ? (
+                  <form
+                    key={a.id}
+                    onSubmit={(e) => { e.preventDefault(); saveEditAllergy(a.id) }}
+                    className="flex items-center gap-2 border border-slate-100 rounded-2xl px-4 py-2.5 flex-wrap"
+                  >
+                    <input
+                      autoFocus
+                      value={editAllergyForm.name}
+                      onChange={(e) => setEditAllergyForm({ ...editAllergyForm, name: e.target.value })}
+                      className="flex-1 min-w-[140px] rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                    />
+                    <select
+                      value={editAllergyForm.severity}
+                      onChange={(e) => setEditAllergyForm({ ...editAllergyForm, severity: e.target.value })}
+                      className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm bg-white"
+                    >
+                      <option value="high">{t('High severity')}</option>
+                      <option value="moderate">{t('Moderate severity')}</option>
+                      <option value="low">{t('Low severity')}</option>
+                    </select>
+                    <button type="submit" disabled={allergyRowSaving} className="p-1.5 text-emerald-600 hover:text-emerald-700" title={t('Save')}>
+                      <Check size={16} />
+                    </button>
+                    <button type="button" onClick={() => setEditingAllergyId(null)} className="p-1.5 text-slate-400 hover:text-slate-600" title={t('Cancel')}>
+                      <X size={16} />
+                    </button>
+                  </form>
+                ) : (
+                  <div key={a.id} className="flex items-center justify-between gap-3 bg-red-50 rounded-full pl-3.5 pr-2 py-1.5">
+                    <span className="text-sm font-semibold text-red-700">⚠ {a.name}</span>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <button type="button" onClick={() => startEditAllergy(a)} className="p-1 text-red-700/60 hover:text-red-800" title={t('Edit')}>
+                        <Pencil size={13} />
+                      </button>
+                      <button type="button" onClick={() => deleteAllergy(a)} className="p-1 text-red-700/60 hover:text-red-900" title={t('Delete')}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                )
+              )}
               {p.allergies.length === 0 && <p className="text-sm text-slate-400">{t('No known drug allergies.')}</p>}
-            </ul>
+            </div>
           </section>
 
           <section>
@@ -471,15 +645,63 @@ export default function PatientProfile() {
 
             {showMedForm && (
               <form onSubmit={addMedication} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
-                <input required placeholder={t('Medicine name')} value={medForm.name} onChange={(e) => setMedForm({ ...medForm, name: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+                <input
+                  required
+                  placeholder={t('Medicine name')}
+                  value={medForm.name}
+                  onChange={(e) => { setMedForm({ ...medForm, name: e.target.value }); setMedPreview(null) }}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+                />
                 <input placeholder={t('Dose (e.g. 500mg)')} value={medForm.dose} onChange={(e) => setMedForm({ ...medForm, dose: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
                 <input placeholder={t('Frequency (e.g. Twice daily)')} value={medForm.frequency} onChange={(e) => setMedForm({ ...medForm, frequency: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
                 <input placeholder={t('Duration (e.g. 7 days)')} value={medForm.duration} onChange={(e) => setMedForm({ ...medForm, duration: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm" />
+
+                {medPreview && (
+                  <div className={`sm:col-span-2 rounded-2xl border p-4 ${
+                    medPreview.overallRisk === 'HIGH' ? 'bg-red-50 border-red-100' : 'bg-amber-50 border-amber-100'
+                  }`}>
+                    <p className={`text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 ${
+                      medPreview.overallRisk === 'HIGH' ? 'text-red-600' : 'text-amber-700'
+                    }`}>
+                      <FileWarning size={13} /> {t(medPreview.overallRisk)} {t('risk')} — {t('checked automatically before saving')}
+                    </p>
+                    <p className="mt-1.5 text-sm font-medium text-ink-900">{medPreview.summaryMessage}</p>
+                    <ul className="mt-2 flex flex-col gap-1">
+                      {medPreview.checks
+                        .filter((c) => c.status !== 'NO ALERT' && c.status !== 'NOT EVALUATED')
+                        .map((c, i) => (
+                          <li key={i} className="text-xs text-slate-600">
+                            <span className="font-semibold text-ink-900">{t(c.title)}:</span> {c.result}
+                          </li>
+                        ))}
+                    </ul>
+                    <div className="mt-3 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={doSaveMedication}
+                        disabled={medSaving}
+                        className="bg-ink-900 hover:bg-black disabled:opacity-60 text-white text-xs font-semibold px-4 py-2 rounded-full"
+                      >
+                        {medSaving ? t('Saving…') : t('Save Anyway')}
+                      </button>
+                      <button type="button" onClick={() => setMedPreview(null)} className="text-slate-500 text-xs font-medium px-2 py-2">
+                        {t('Go Back')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="sm:col-span-2 flex gap-3">
                   <button type="submit" disabled={medSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
                     {medSaving ? t('Saving…') : t('Save medication')}
                   </button>
-                  <button type="button" onClick={() => setShowMedForm(false)} className="text-slate-500 text-sm font-medium px-5 py-2">{t('Cancel')}</button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowMedForm(false); setMedPreview(null) }}
+                    className="text-slate-500 text-sm font-medium px-5 py-2"
+                  >
+                    {t('Cancel')}
+                  </button>
                 </div>
               </form>
             )}
@@ -495,23 +717,102 @@ export default function PatientProfile() {
                     <th className="py-2 pr-4 font-medium">{t('Dose')}</th>
                     <th className="py-2 pr-4 font-medium">{t('Frequency')}</th>
                     <th className="py-2 pr-4 font-medium">{t('Duration')}</th>
-                    <th className="py-2 font-medium">{t('Status')}</th>
+                    <th className="py-2 pr-4 font-medium">{t('Status')}</th>
+                    <th className="py-2 font-medium">{t('Actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {p.medications.map((m) => (
-                    <tr key={m.id} className="border-b border-slate-50">
-                      <td className="py-2.5 pr-4 font-semibold text-ink-900">{m.name}</td>
-                      <td className="py-2.5 pr-4 text-slate-600">{m.dose}</td>
-                      <td className="py-2.5 pr-4 text-slate-600">{m.frequency}</td>
-                      <td className="py-2.5 pr-4 text-slate-600">{m.duration}</td>
-                      <td className="py-2.5">
-                        <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full capitalize">
-                          {m.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {p.medications.map((m) =>
+                    editingMedId === m.id ? (
+                      <tr key={m.id} className="border-b border-slate-50 bg-slate-50/60">
+                        <td className="py-2.5 pr-4 font-semibold text-ink-900">{m.name}</td>
+                        <td className="py-2 pr-4">
+                          <input
+                            value={editMedForm.dose}
+                            onChange={(e) => setEditMedForm({ ...editMedForm, dose: e.target.value })}
+                            className="w-24 rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                          />
+                        </td>
+                        <td className="py-2 pr-4">
+                          <input
+                            value={editMedForm.frequency}
+                            onChange={(e) => setEditMedForm({ ...editMedForm, frequency: e.target.value })}
+                            className="w-28 rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                          />
+                        </td>
+                        <td className="py-2 pr-4">
+                          <input
+                            value={editMedForm.duration}
+                            onChange={(e) => setEditMedForm({ ...editMedForm, duration: e.target.value })}
+                            className="w-24 rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                          />
+                        </td>
+                        <td className="py-2 pr-4">
+                          <select
+                            value={editMedForm.status}
+                            onChange={(e) => setEditMedForm({ ...editMedForm, status: e.target.value })}
+                            className="rounded-lg border border-slate-200 px-2 py-1 text-sm bg-white capitalize"
+                          >
+                            <option value="active">{t('active')}</option>
+                            <option value="completed">{t('completed')}</option>
+                            <option value="discontinued">{t('discontinued')}</option>
+                          </select>
+                        </td>
+                        <td className="py-2">
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              disabled={editMedSaving}
+                              onClick={() => saveEditMedication(m.id)}
+                              className="p-1.5 text-emerald-600 hover:text-emerald-700"
+                              title={t('Save')}
+                            >
+                              <Save size={15} />
+                            </button>
+                            <button type="button" onClick={() => setEditingMedId(null)} className="p-1.5 text-slate-400 hover:text-slate-600" title={t('Cancel')}>
+                              <X size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={m.id} className="border-b border-slate-50">
+                        <td className="py-2.5 pr-4 font-semibold text-ink-900">{m.name}</td>
+                        <td className="py-2.5 pr-4 text-slate-600">{m.dose}</td>
+                        <td className="py-2.5 pr-4 text-slate-600">{m.frequency}</td>
+                        <td className="py-2.5 pr-4 text-slate-600">{m.duration}</td>
+                        <td className="py-2.5 pr-4">
+                          <span
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${
+                              m.status === 'active'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : m.status === 'discontinued'
+                                ? 'bg-red-50 text-red-700'
+                                : 'bg-slate-100 text-slate-500'
+                            }`}
+                          >
+                            {t(m.status)}
+                          </span>
+                        </td>
+                        <td className="py-2.5">
+                          <div className="flex items-center gap-1">
+                            <button type="button" onClick={() => startEditMedication(m)} className="p-1.5 text-slate-400 hover:text-brand-600" title={t('Edit')}>
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={medDeletingId === m.id}
+                              onClick={() => deleteMedication(m)}
+                              className="p-1.5 text-slate-400 hover:text-red-600"
+                              title={t('Delete')}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  )}
                 </tbody>
               </table>
               )}

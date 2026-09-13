@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { AlertTriangle, Phone, Clock, Loader2, HeartPulse, Lock, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, Phone, Clock, Loader2, HeartPulse, Lock, ShieldAlert, Download } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 
 // Public, read-only page -- intentionally NOT behind ProtectedRoute.
@@ -170,9 +170,18 @@ export default function SharedSummary() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-14">
-      <div className="rounded-2xl bg-brand-50 border border-brand-100 px-5 py-3 flex items-center gap-2 text-sm text-brand-700 font-medium">
-        <HeartPulse size={16} className="shrink-0" />
-        Shared read-only health summary — this is not a MediLink login, and nothing here can be edited.
+      <div className="print:hidden rounded-2xl bg-brand-50 border border-brand-100 px-5 py-3 flex items-center justify-between gap-3 flex-wrap text-sm text-brand-700 font-medium">
+        <span className="flex items-center gap-2">
+          <HeartPulse size={16} className="shrink-0" />
+          Shared read-only health summary — this is not a MediLink login, and nothing here can be edited.
+        </span>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="inline-flex items-center gap-1.5 bg-white border border-brand-200 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full shrink-0 hover:bg-brand-50"
+        >
+          <Download size={13} /> Download PDF
+        </button>
       </div>
 
       <h1 className="mt-8 text-3xl font-extrabold text-ink-900">{profile?.full_name || 'Patient'}</h1>
