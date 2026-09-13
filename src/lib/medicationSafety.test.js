@@ -89,6 +89,44 @@ describe('analyzeMedication — therapeutic duplication', () => {
   })
 })
 
+describe('analyzeMedication — newer drug classes wired into existing rules', () => {
+  test('flags a Direct Oral Anticoagulant + NSAID combination as HIGH risk', () => {
+    const report = analyzeMedication('Rivaroxaban', {
+      ...empty,
+      medications: [{ name: 'Ibuprofen', status: 'active' }],
+    })
+    assert.equal(checkFor(report, 'Drug–Drug Interaction Check').status, 'HIGH RISK')
+    assert.equal(report.overallRisk, 'HIGH')
+  })
+
+  test('flags a Benzodiazepine + Opioid combination as HIGH risk', () => {
+    const report = analyzeMedication('Alprazolam', {
+      ...empty,
+      medications: [{ name: 'Tramadol', status: 'active' }],
+    })
+    assert.equal(checkFor(report, 'Drug–Drug Interaction Check').status, 'HIGH RISK')
+    assert.equal(report.overallRisk, 'HIGH')
+  })
+
+  test('flags a Nitrate + PDE5 Inhibitor combination as HIGH risk', () => {
+    const report = analyzeMedication('Sildenafil', {
+      ...empty,
+      medications: [{ name: 'Isosorbide Mononitrate', status: 'active' }],
+    })
+    assert.equal(checkFor(report, 'Drug–Drug Interaction Check').status, 'HIGH RISK')
+    assert.equal(report.overallRisk, 'HIGH')
+  })
+
+  test('flags reduced eGFR against an SGLT2 inhibitor', () => {
+    const report = analyzeMedication('Dapagliflozin', {
+      ...empty,
+      labResults: [{ test_name: 'eGFR', value: '30' }],
+    })
+    assert.equal(checkFor(report, 'Renal Function Review').status, 'CAUTION')
+    assert.equal(report.overallRisk, 'CAUTION')
+  })
+})
+
 describe('analyzeMedication — renal dosing', () => {
   test('flags reduced eGFR against a renally-dosed medicine', () => {
     const report = analyzeMedication('Metformin', {
