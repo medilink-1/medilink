@@ -353,4 +353,10 @@ export const HI = {
   'Password must be at least 6 characters.': 'पासवर्ड कम से कम 6 अक्षर का होना चाहिए।',
   'Passwords do not match.': 'पासवर्ड मेल नहीं खाते।',
   'Update password': 'पासवर्ड अपडेट करें',
+
+  // Home: Today's Medications checklist
+  "TODAY'S MEDICATIONS": 'आज की दवाएं',
+  'Check off each dose as you take it.': 'हर खुराक लेने पर उसे चेक करें।',
+  'taken today': 'आज ली गईं',
+  'day streak': 'दिन की लगातार श्रृंखला',
 }

@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { usePatientData } from '../lib/usePatientData'
 import SmartHealthCard from '../components/SmartHealthCard'
+import MedicationChecklist from '../components/MedicationChecklist'
 import { analyzeMedication } from '../lib/medicationSafety'
 
 const ecosystemCards = [
@@ -154,6 +155,11 @@ export default function Home() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* SECTION 2.5: TODAY'S MEDICATION CHECKLIST */}
+      {user && activeMeds.length > 0 && (
+        <MedicationChecklist medications={patient.medications} doses={patient.medicationDoses} onReload={patient.reload} />
       )}
 
       {/* SECTION 3: MY HEALTH ECOSYSTEM */}

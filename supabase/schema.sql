@@ -452,3 +452,29 @@ $$;
 
 revoke all on function get_shared_health_summary(text, text) from public;
 grant execute on function get_shared_health_summary(text, text) to anon, authenticated;
+
+-- =========================================================
+-- 15. Medication doses (daily adherence checklist)
+--     One row per medication per calendar day, recording whether that
+--     day's dose was checked off as taken. Deliberately coarse -- one
+--     checkbox per medication per day, no matter how many times a day
+--     it's actually taken -- and separate from the automatic
+--     course-end reminders (which watch a course's end date, not
+--     daily adherence). Run this block once in the Supabase SQL
+--     editor to enable the "Today's Medications" checklist on the
+--     Home page.
+-- =========================================================
+create table if not exists medication_doses (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles (id) on delete cascade not null,
+  medication_id uuid references medications (id) on delete cascade not null,
+  dose_date date not null default current_date,
+  taken_at timestamptz,
+  created_at timestamptz default now(),
+  unique (medication_id, dose_date)
+);
+
+alter table medication_doses enable row level security;
+
+create policy "Own medication doses only" on medication_doses for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
