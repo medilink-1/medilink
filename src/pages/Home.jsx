@@ -92,7 +92,7 @@ export default function Home() {
 
         <div className="flex justify-center">
           {user && patient.profile ? (
-            <SmartHealthCard profile={patient.profile} allergies={patient.allergies} />
+            <SmartHealthCard profile={patient.profile} allergies={patient.allergies} emergencyQrLink={patient.emergencyQrLink} />
           ) : (
             <div className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-brand-700 via-brand-600 to-teal-600 text-white p-8 shadow-xl">
               <p className="text-sm font-extrabold tracking-widest">MEDILINK</p>

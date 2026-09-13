@@ -1,29 +1,30 @@
 import { useEffect, useState } from 'react'
-import { ShieldAlert, QrCode, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ShieldAlert, QrCode, X, Lock } from 'lucide-react'
 import QRCode from 'qrcode'
 
-export default function SmartHealthCard({ profile, allergies = [] }) {
+export default function SmartHealthCard({ profile, allergies = [], emergencyQrLink = null }) {
   const primaryAllergy = allergies[0]?.name
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const [showQr, setShowQr] = useState(false)
 
-  useEffect(() => {
-    const lines = [
-      'MediLink Emergency Health Card',
-      `Name: ${profile?.full_name || 'Unknown'}`,
-      `Health ID: ${profile?.health_id || '—'}`,
-      `Blood Group: ${profile?.blood_group || '—'}`,
-      `Allergy: ${primaryAllergy || 'None recorded'}`,
-    ]
-    if (profile?.emergency_name) {
-      const rel = profile.emergency_relation ? ` (${profile.emergency_relation})` : ''
-      const phone = profile.emergency_phone ? ` — ${profile.emergency_phone}` : ''
-      lines.push(`Emergency Contact: ${profile.emergency_name}${rel}${phone}`)
-    }
-    const payload = lines.join('\n')
+  // The QR now encodes a URL to the PIN-protected emergency summary page
+  // (see PatientProfile's "Emergency QR Access" section) rather than
+  // embedding the patient's name, allergy, and emergency contact as raw
+  // text -- a scan or a photo of the old QR revealed that data forever,
+  // with no way to revoke it. This QR is useless without the PIN, and
+  // regenerating it (changing the PIN) invalidates any old copy.
+  const emergencyUrl = emergencyQrLink
+    ? `${window.location.origin}${import.meta.env.BASE_URL}shared/${emergencyQrLink.token}`
+    : null
 
+  useEffect(() => {
+    if (!emergencyUrl) {
+      setQrDataUrl(null)
+      return
+    }
     let cancelled = false
-    QRCode.toDataURL(payload, { margin: 1, width: 240 })
+    QRCode.toDataURL(emergencyUrl, { margin: 1, width: 240 })
       .then((url) => {
         if (!cancelled) setQrDataUrl(url)
       })
@@ -33,15 +34,7 @@ export default function SmartHealthCard({ profile, allergies = [] }) {
     return () => {
       cancelled = true
     }
-  }, [
-    profile?.full_name,
-    profile?.health_id,
-    profile?.blood_group,
-    profile?.emergency_name,
-    profile?.emergency_relation,
-    profile?.emergency_phone,
-    primaryAllergy,
-  ])
+  }, [emergencyUrl])
 
   return (
     <>
@@ -77,15 +70,27 @@ export default function SmartHealthCard({ profile, allergies = [] }) {
         )}
 
         <div className="relative mt-5 flex items-center justify-between">
-          <span className="text-[11px] text-white/70">Emergency Medical Access Enabled</span>
-          <button
-            type="button"
-            onClick={() => setShowQr(true)}
-            aria-label="Show scannable emergency QR code"
-            className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center hover:bg-white/25 transition-colors"
-          >
-            <QrCode size={18} />
-          </button>
+          <span className="text-[11px] text-white/70">
+            {emergencyUrl ? 'Emergency Medical Access Enabled' : 'Emergency QR not set up yet'}
+          </span>
+          {emergencyUrl ? (
+            <button
+              type="button"
+              onClick={() => setShowQr(true)}
+              aria-label="Show scannable emergency QR code"
+              className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center hover:bg-white/25 transition-colors"
+            >
+              <QrCode size={18} />
+            </button>
+          ) : (
+            <Link
+              to="/profile"
+              aria-label="Set up your PIN-protected emergency QR code on your profile"
+              className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center hover:bg-white/25 transition-colors"
+            >
+              <QrCode size={18} />
+            </Link>
+          )}
         </div>
       </div>
 
@@ -106,9 +111,12 @@ export default function SmartHealthCard({ profile, allergies = [] }) {
             >
               <X size={18} />
             </button>
-            <p className="text-sm font-bold text-ink-900">Emergency QR Code</p>
+            <p className="text-sm font-bold text-ink-900 flex items-center justify-center gap-1.5">
+              <Lock size={13} className="text-slate-400" /> Emergency QR Code
+            </p>
             <p className="mt-1 text-xs text-slate-500">
-              Scan with any QR reader to view critical health info, even offline.
+              Scanning this opens a page that asks for your PIN before showing any health
+              information -- it reveals nothing on its own.
             </p>
             {qrDataUrl ? (
               <img src={qrDataUrl} alt="Emergency health QR code" className="mt-4 mx-auto rounded-lg" width={240} height={240} />

@@ -19,6 +19,7 @@ export function usePatientData() {
     insurancePolicies: [],
     insuranceClaims: [],
     timelineEvents: [],
+    emergencyQrLink: null,
   })
   const [loading, setLoading] = useState(true)
 
@@ -37,6 +38,7 @@ export function usePatientData() {
       insurancePolicies,
       insuranceClaims,
       timelineEvents,
+      emergencyQrLink,
     ] = await Promise.all([
       supabase.from('conditions').select('*').order('created_at'),
       supabase.from('allergies').select('*').order('created_at'),
@@ -49,6 +51,13 @@ export function usePatientData() {
       supabase.from('insurance_policies').select('*').order('created_at'),
       supabase.from('insurance_claims').select('*').order('created_at'),
       supabase.from('timeline_events').select('*').order('event_year'),
+      supabase
+        .from('share_links')
+        .select('token, expires_at')
+        .eq('label', '__emergency_qr__')
+        .eq('revoked', false)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle(),
     ])
 
     // Self-healing backfill: earlier app versions saved clinic/hospital
@@ -108,6 +117,7 @@ export function usePatientData() {
       insurancePolicies: insurancePolicies.data || [],
       insuranceClaims: insuranceClaims.data || [],
       timelineEvents: allTimelineEvents,
+      emergencyQrLink: emergencyQrLink.data || null,
     })
     setLoading(false)
   }, [user])

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2, Share2, Copy, Clock } from 'lucide-react'
+import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2, Share2, Copy, Clock, Lock, ShieldCheck } from 'lucide-react'
 import { usePatientData } from '../lib/usePatientData'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
@@ -39,6 +39,11 @@ export default function PatientProfile() {
   const [shareSaving, setShareSaving] = useState(false)
   const [newShareUrl, setNewShareUrl] = useState('')
   const [copied, setCopied] = useState(false)
+  const [showQrPinForm, setShowQrPinForm] = useState(false)
+  const [qrPin, setQrPin] = useState('')
+  const [qrPinConfirm, setQrPinConfirm] = useState('')
+  const [qrPinError, setQrPinError] = useState('')
+  const [qrPinSaving, setQrPinSaving] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -145,6 +150,36 @@ export default function PatientProfile() {
     } catch {
       // clipboard API unavailable -- the user can still select and copy the text manually
     }
+  }
+
+  async function handleSetEmergencyPin(e) {
+    e.preventDefault()
+    setQrPinError('')
+    if (!/^[0-9]{4,6}$/.test(qrPin)) {
+      setQrPinError('PIN must be 4 to 6 digits.')
+      return
+    }
+    if (qrPin !== qrPinConfirm) {
+      setQrPinError('PINs do not match.')
+      return
+    }
+    setQrPinSaving(true)
+    const { error: pinError } = await supabase.rpc('create_emergency_qr_link', { p_pin: qrPin })
+    setQrPinSaving(false)
+    if (pinError) {
+      setQrPinError(pinError.message)
+      return
+    }
+    setQrPin('')
+    setQrPinConfirm('')
+    setShowQrPinForm(false)
+    await p.reload()
+  }
+
+  async function handleRevokeEmergencyQr() {
+    if (!window.confirm('Turn off your Emergency QR code? The QR on your Smart Health Card will stop working until you set a new PIN.')) return
+    await supabase.rpc('revoke_emergency_qr_link')
+    await p.reload()
   }
 
   function startEdit() {
@@ -654,10 +689,82 @@ export default function PatientProfile() {
               {shareLinks.length === 0 && <p className="text-sm text-slate-400">{t('No active share links.')}</p>}
             </ul>
           </section>
+
+          <section>
+            <h2 className="text-sm font-bold tracking-wide text-slate-400">{t('Emergency QR Access')}</h2>
+            <p className="mt-2 text-xs text-slate-400">
+              {t('Your Smart Health Card\'s QR code opens a page that asks for a PIN before showing anything — set one to turn it on.')}
+            </p>
+
+            {p.emergencyQrLink ? (
+              <div className="mt-3 border border-slate-100 rounded-2xl p-4 flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <p className="text-sm font-semibold text-ink-900 flex items-center gap-1.5">
+                    <ShieldCheck size={14} className="text-emerald-600" /> {t('Emergency QR is active')}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">{t('Expires')}: {new Date(p.emergencyQrLink.expires_at).toLocaleDateString()}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setShowQrPinForm((v) => !v)} className="text-xs font-semibold text-brand-600 hover:text-brand-700 px-2 py-1">
+                    {t('Change PIN')}
+                  </button>
+                  <button type="button" onClick={handleRevokeEmergencyQr} className="text-xs font-semibold text-red-600 hover:text-red-700 px-2 py-1">
+                    {t('Turn Off')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-slate-400">{t('Emergency QR is not set up yet.')}</p>
+            )}
+
+            {!p.emergencyQrLink && !showQrPinForm && (
+              <button
+                type="button"
+                onClick={() => setShowQrPinForm(true)}
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+              >
+                <Lock size={14} /> {t('Set a PIN')}
+              </button>
+            )}
+
+            {showQrPinForm && (
+              <form onSubmit={handleSetEmergencyPin} className="mt-3 border border-slate-100 rounded-2xl p-5 grid sm:grid-cols-2 gap-3">
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  placeholder={t('New PIN (4-6 digits)')}
+                  value={qrPin}
+                  onChange={(e) => setQrPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+                />
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  placeholder={t('Confirm PIN')}
+                  value={qrPinConfirm}
+                  onChange={(e) => setQrPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+                />
+                {qrPinError && <p className="sm:col-span-2 text-sm text-red-600">{qrPinError}</p>}
+                <div className="sm:col-span-2 flex gap-3">
+                  <button type="submit" disabled={qrPinSaving} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2 rounded-full">
+                    {qrPinSaving ? t('Saving…') : t('Save PIN')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowQrPinForm(false); setQrPin(''); setQrPinConfirm(''); setQrPinError('') }}
+                    className="text-slate-500 text-sm font-medium px-5 py-2"
+                  >
+                    {t('Cancel')}
+                  </button>
+                </div>
+              </form>
+            )}
+          </section>
         </div>
 
         <div>
-          <SmartHealthCard profile={p.profile} allergies={p.allergies} />
+          <SmartHealthCard profile={p.profile} allergies={p.allergies} emergencyQrLink={p.emergencyQrLink} />
         </div>
       </div>
     </div>

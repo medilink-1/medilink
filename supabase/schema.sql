@@ -300,3 +300,155 @@ $$;
 -- function -- it is the sole entry point, and it enforces its own
 -- token/expiry/revocation checks internally before returning anything.
 grant execute on function get_shared_health_summary(text) to anon, authenticated;
+
+-- =========================================================
+-- 14. PIN-protected Emergency QR access
+--     Lets the Smart Health Card's QR code point at a URL instead of
+--     embedding raw PII, and gates that page behind a 4-6 digit PIN the
+--     patient sets themselves -- so a scan (or a photo/screenshot of the
+--     QR) is useless without the PIN, and the whole thing is revocable
+--     by regenerating it, unlike a static QR code.
+-- =========================================================
+create extension if not exists pgcrypto;
+
+alter table share_links add column if not exists pin_hash text;
+alter table share_links add column if not exists failed_attempts int not null default 0;
+alter table share_links add column if not exists locked_until timestamptz;
+
+-- Creates (or replaces) this patient's one emergency-QR link. Calling it
+-- again always revokes whatever was created before, so regenerating the
+-- QR / changing the PIN immediately invalidates any old printed or saved
+-- copy. Ordinary security (SECURITY INVOKER, not DEFINER): it only ever
+-- touches the calling patient's own rows, so it relies on -- and is
+-- protected by -- the existing "Own share links only" RLS policy.
+create or replace function create_emergency_qr_link(p_pin text, p_hours int default 8760)
+returns table(token text, expires_at timestamptz)
+language plpgsql
+security invoker
+set search_path = public, extensions
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_token text;
+  v_expires timestamptz;
+begin
+  if v_user is null then
+    raise exception 'Not authenticated';
+  end if;
+  if p_pin is null or p_pin !~ '^[0-9]{4,6}$' then
+    raise exception 'PIN must be 4 to 6 digits';
+  end if;
+
+  update share_links set revoked = true
+    where user_id = v_user and label = '__emergency_qr__' and revoked = false;
+
+  v_token := replace(gen_random_uuid()::text, '-', '');
+  v_expires := now() + (p_hours || ' hours')::interval;
+
+  insert into share_links (user_id, token, label, expires_at, pin_hash)
+  values (v_user, v_token, '__emergency_qr__', v_expires, crypt(p_pin, gen_salt('bf')));
+
+  return query select v_token, v_expires;
+end;
+$$;
+
+revoke all on function create_emergency_qr_link(text, int) from public;
+grant execute on function create_emergency_qr_link(text, int) to authenticated;
+
+-- Revokes the patient's current emergency QR link outright (e.g. "I lost
+-- my phone" / "someone else saw my PIN") without needing a replacement.
+create or replace function revoke_emergency_qr_link()
+returns void
+language sql
+security invoker
+set search_path = public
+as $$
+  update share_links set revoked = true
+    where user_id = auth.uid() and label = '__emergency_qr__' and revoked = false;
+$$;
+
+revoke all on function revoke_emergency_qr_link() from public;
+grant execute on function revoke_emergency_qr_link() to authenticated;
+
+-- Replaces the read function to add the PIN gate. Dropped and recreated
+-- (rather than "create or replace") because the parameter list is
+-- changing -- otherwise Postgres would keep the old 1-argument version
+-- around as a separate overload instead of actually replacing it.
+drop function if exists get_shared_health_summary(text);
+
+create or replace function get_shared_health_summary(p_token text, p_pin text default null)
+returns json
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_link share_links%rowtype;
+  v_result json;
+begin
+  select * into v_link from share_links
+    where token = p_token and revoked = false and expires_at > now();
+
+  if not found then
+    return json_build_object('status', 'not_found');
+  end if;
+
+  if v_link.locked_until is not null and v_link.locked_until > now() then
+    return json_build_object('status', 'locked', 'locked_until', v_link.locked_until);
+  end if;
+
+  if v_link.pin_hash is not null then
+    if p_pin is null or p_pin = '' then
+      return json_build_object(
+        'status', 'pin_required',
+        'label', nullif(v_link.label, '__emergency_qr__')
+      );
+    end if;
+
+    if crypt(p_pin, v_link.pin_hash) <> v_link.pin_hash then
+      update share_links set
+        failed_attempts = failed_attempts + 1,
+        locked_until = case when failed_attempts + 1 >= 5 then now() + interval '15 minutes' else locked_until end
+        where id = v_link.id;
+      return json_build_object(
+        'status', 'invalid_pin',
+        'attempts_left', greatest(0, 5 - (v_link.failed_attempts + 1))
+      );
+    end if;
+
+    update share_links set failed_attempts = 0, locked_until = null where id = v_link.id;
+  end if;
+
+  select json_build_object(
+    'status', 'ok',
+    'profile', (
+      select json_build_object(
+        'full_name', full_name, 'age', age, 'gender', gender,
+        'blood_group', blood_group, 'health_id', health_id,
+        'emergency_name', emergency_name, 'emergency_relation', emergency_relation,
+        'emergency_phone', emergency_phone
+      )
+      from profiles where id = v_link.user_id
+    ),
+    'allergies', (
+      select coalesce(json_agg(json_build_object('name', name, 'severity', severity)), '[]'::json)
+      from allergies where user_id = v_link.user_id
+    ),
+    'conditions', (
+      select coalesce(json_agg(json_build_object('name', name)), '[]'::json)
+      from conditions where user_id = v_link.user_id
+    ),
+    'medications', (
+      select coalesce(json_agg(json_build_object('name', name, 'dose', dose, 'frequency', frequency, 'status', status)), '[]'::json)
+      from medications where user_id = v_link.user_id and status = 'active'
+    ),
+    'label', nullif(v_link.label, '__emergency_qr__'),
+    'expires_at', v_link.expires_at
+  ) into v_result;
+
+  return v_result;
+end;
+$$;
+
+revoke all on function get_shared_health_summary(text, text) from public;
+grant execute on function get_shared_health_summary(text, text) to anon, authenticated;
