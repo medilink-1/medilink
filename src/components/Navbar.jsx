@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe, Pill, ShieldCheck, BellRing } from 'lucide-react'
+import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe, Pill, ShieldCheck, BellRing, ShieldAlert } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { supabase } from '../lib/supabaseClient'
@@ -41,10 +41,18 @@ export default function Navbar() {
     let cancelled = false
 
     async function loadNotifications() {
-      const [{ data: vax }, { data: deps }, { data: meds }] = await Promise.all([
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+      const [{ data: vax }, { data: deps }, { data: meds }, { data: access }] = await Promise.all([
         supabase.from('vaccinations').select('*').neq('status', 'completed'),
         supabase.from('dependents').select('*'),
         supabase.from('medications').select('*').eq('status', 'active'),
+        supabase
+          .from('activity_log')
+          .select('*')
+          .in('event_type', ['emergency_qr_viewed', 'emergency_qr_pin_failed', 'share_link_viewed', 'share_link_pin_failed'])
+          .gte('created_at', threeDaysAgo)
+          .order('created_at', { ascending: false })
+          .limit(10),
       ])
       if (cancelled) return
       const depNameById = Object.fromEntries((deps || []).map((d) => [d.id, d.name]))
@@ -60,7 +68,20 @@ export default function Navbar() {
           v.status === 'due_soon' ? 'due soon' : 'scheduled'
         }${v.event_date ? ` (${new Date(v.event_date).toLocaleDateString()})` : ''}.`,
       }))
-      const allItems = [...medItems, ...vaxItems]
+      const accessItems = (access || []).map((entry) => {
+        const failed = entry.event_type.endsWith('_pin_failed')
+        const isEmergency = entry.event_type.startsWith('emergency_qr_')
+        const subject = isEmergency ? 'Your Emergency QR' : `Your share link${entry.detail ? ` “${entry.detail}”` : ''}`
+        return {
+          id: `access-${entry.id}`,
+          type: 'access',
+          failed,
+          text: failed
+            ? `${subject} had an incorrect PIN attempt (${new Date(entry.created_at).toLocaleString()}).`
+            : `${subject} was viewed (${new Date(entry.created_at).toLocaleString()}).`,
+        }
+      })
+      const allItems = [...medItems, ...vaxItems, ...accessItems]
       setNotifications(allItems)
       notifyNewReminders(allItems)
     }
@@ -160,6 +181,8 @@ export default function Navbar() {
                       <li key={n.id} className="flex items-start gap-2 text-sm text-slate-600 border-t border-slate-50 pt-2.5 first:border-t-0 first:pt-0">
                         {n.type === 'medication' ? (
                           <Pill size={14} className="text-brand-500 mt-0.5 shrink-0" />
+                        ) : n.type === 'access' ? (
+                          <ShieldAlert size={14} className={`mt-0.5 shrink-0 ${n.failed ? 'text-red-500' : 'text-teal-600'}`} />
                         ) : (
                           <Syringe size={14} className="text-brand-500 mt-0.5 shrink-0" />
                         )}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2, Share2, Copy, Clock, Lock, ShieldCheck, Save, FileWarning } from 'lucide-react'
+import { AlertTriangle, Phone, Loader2, Pencil, X, Check, Plus, Upload, FileText, Download, Trash2, Share2, Copy, Clock, Lock, ShieldCheck, Save, FileWarning, Eye } from 'lucide-react'
 import { usePatientData } from '../lib/usePatientData'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
@@ -1041,6 +1041,27 @@ export default function PatientProfile() {
               >
                 <Lock size={14} /> {t('Set a PIN')}
               </button>
+            )}
+
+            {p.activityLog.filter((e) => e.event_type === 'emergency_qr_viewed' || e.event_type === 'emergency_qr_pin_failed').length > 0 && (
+              <div className="mt-3 border border-slate-100 rounded-2xl p-4">
+                <p className="text-xs font-bold text-slate-400">{t('RECENT ACCESS')}</p>
+                <ul className="mt-2 flex flex-col gap-1.5">
+                  {p.activityLog
+                    .filter((e) => e.event_type === 'emergency_qr_viewed' || e.event_type === 'emergency_qr_pin_failed')
+                    .slice(0, 5)
+                    .map((e) => (
+                      <li key={e.id} className="text-xs text-slate-500 flex items-center gap-1.5">
+                        {e.event_type === 'emergency_qr_pin_failed' ? (
+                          <AlertTriangle size={12} className="text-red-500 shrink-0" />
+                        ) : (
+                          <Eye size={12} className="text-slate-400 shrink-0" />
+                        )}
+                        {e.event_type === 'emergency_qr_pin_failed' ? t('Incorrect PIN attempt') : t('Viewed')} · {new Date(e.created_at).toLocaleString()}
+                      </li>
+                    ))}
+                </ul>
+              </div>
             )}
 
             {showQrPinForm && (

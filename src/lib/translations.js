@@ -402,6 +402,9 @@ export const HI = {
   'Emergency QR turned off': 'इमरजेंसी QR बंद किया गया',
   'Emergency QR viewed': 'इमरजेंसी QR देखा गया',
   'Emergency QR: incorrect PIN entered': 'इमरजेंसी QR: गलत पिन डाला गया',
+  'RECENT ACCESS': 'हाल की पहुंच',
+  'Incorrect PIN attempt': 'गलत पिन प्रयास',
+  'Viewed': 'देखा गया',
 
   // Browser notification toggle (Navbar)
   'Notifications blocked in browser settings': 'ब्राउज़र सेटिंग्स में सूचनाएं अवरुद्ध हैं',
