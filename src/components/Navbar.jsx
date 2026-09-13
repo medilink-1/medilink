@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe, Pill } from 'lucide-react'
+import { Bell, HelpCircle, User, ChevronDown, LogOut, HeartPulse, Menu, X, Syringe, Pill, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { supabase } from '../lib/supabaseClient'
@@ -178,6 +178,13 @@ export default function Navbar() {
                   >
                     {t('Patient Profile')}
                   </Link>
+                  <Link
+                    to="/data-privacy"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                  >
+                    <ShieldCheck size={15} /> {t('Data & Privacy')}
+                  </Link>
                   <button
                     onClick={handleSignOut}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
@@ -218,6 +225,9 @@ export default function Navbar() {
               <>
                 <Link to="/profile" onClick={() => setMobileOpen(false)} className="py-2.5 text-[15px] font-medium text-slate-600">
                   {t('Patient Profile')}
+                </Link>
+                <Link to="/data-privacy" onClick={() => setMobileOpen(false)} className="py-2.5 text-[15px] font-medium text-slate-600">
+                  {t('Data & Privacy')}
                 </Link>
                 <button onClick={handleSignOut} className="flex items-center gap-2 py-2.5 text-[15px] font-medium text-slate-600">
                   <LogOut size={15} /> {t('Sign out')}

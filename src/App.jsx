@@ -22,6 +22,7 @@ const HealthTimeline = lazy(() => import('./pages/HealthTimeline'))
 const MedicationSafety = lazy(() => import('./pages/MedicationSafety'))
 const SharedSummary = lazy(() => import('./pages/SharedSummary'))
 const About = lazy(() => import('./pages/About'))
+const PrivacyData = lazy(() => import('./pages/PrivacyData'))
 
 function Protected({ children }) {
   return <ProtectedRoute>{children}</ProtectedRoute>
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="/insurance" element={<Protected><MedicalInsurance /></Protected>} />
             <Route path="/timeline" element={<Protected><HealthTimeline /></Protected>} />
             <Route path="/medication-safety" element={<Protected><MedicationSafety /></Protected>} />
+            <Route path="/data-privacy" element={<Protected><PrivacyData /></Protected>} />
           </Routes>
         </Suspense>
       </main>

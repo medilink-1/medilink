@@ -359,4 +359,32 @@ export const HI = {
   'Check off each dose as you take it.': 'हर खुराक लेने पर उसे चेक करें।',
   'taken today': 'आज ली गईं',
   'day streak': 'दिन की लगातार श्रृंखला',
+
+  // Data & Privacy page
+  'Data & Privacy': 'डेटा और गोपनीयता',
+  'Get a copy of your health record, or permanently remove it from MediLink.':
+    'अपने स्वास्थ्य रिकॉर्ड की एक प्रति प्राप्त करें, या इसे MediLink से स्थायी रूप से हटाएं।',
+  'Loading your data…': 'आपका डेटा लोड हो रहा है…',
+  'Export Your Data': 'अपना डेटा निर्यात करें',
+  'Download everything MediLink has stored for your account: profile, conditions, allergies, medications, lab results, visits, vaccinations, insurance and your health timeline.':
+    'MediLink द्वारा आपके खाते के लिए संग्रहीत सब कुछ डाउनलोड करें: प्रोफ़ाइल, स्थितियां, एलर्जी, दवाएं, लैब परिणाम, विज़िट, टीकाकरण, बीमा और आपकी स्वास्थ्य समयरेखा।',
+  'Uploaded documents (lab reports, prescriptions) are not included in this file -- download those individually from your Patient Profile.':
+    'अपलोड किए गए दस्तावेज़ (लैब रिपोर्ट, नुस्खे) इस फ़ाइल में शामिल नहीं हैं -- उन्हें अपनी मरीज़ प्रोफ़ाइल से अलग से डाउनलोड करें।',
+  'Download as JSON': 'JSON के रूप में डाउनलोड करें',
+  'Print / Save as PDF': 'प्रिंट करें / PDF के रूप में सहेजें',
+  'Record Summary': 'रिकॉर्ड सारांश',
+  Conditions: 'स्थितियां',
+  Allergies: 'एलर्जियां',
+  Medications: 'दवाएं',
+  'Lab Results': 'लैब परिणाम',
+  'Delete Your Data': 'अपना डेटा हटाएं',
+  'This permanently deletes every record listed above -- your profile, medical history and uploaded documents -- from MediLink. This cannot be undone.':
+    'यह ऊपर सूचीबद्ध हर रिकॉर्ड को स्थायी रूप से हटा देता है -- आपकी प्रोफ़ाइल, चिकित्सा इतिहास और अपलोड किए गए दस्तावेज़ -- MediLink से। इसे पूर्ववत नहीं किया जा सकता।',
+  'This removes your health data, not your sign-in credentials. Your email will still be able to sign in afterward, starting from a blank profile. To close the login itself, contact support.':
+    'यह आपका स्वास्थ्य डेटा हटाता है, आपके साइन-इन क्रेडेंशियल नहीं। आपका ईमेल इसके बाद भी साइन इन कर सकेगा, एक खाली प्रोफ़ाइल से शुरू होकर। लॉगिन को ही बंद करने के लिए, सहायता से संपर्क करें।',
+  'Type DELETE to confirm': 'पुष्टि करने के लिए DELETE टाइप करें',
+  'Deleting…': 'हटाया जा रहा है…',
+  'Permanently Delete My Data': 'मेरा डेटा स्थायी रूप से हटाएं',
+  'Consider exporting your data above before deleting it.': 'हटाने से पहले ऊपर अपना डेटा निर्यात करने पर विचार करें।',
+  'Something went wrong deleting your data. Please try again.': 'आपका डेटा हटाने में कुछ गलत हो गया। कृपया फिर से प्रयास करें।',
 }
