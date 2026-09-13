@@ -9,17 +9,40 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const loadProfile = useCallback(async (userId) => {
+  // Loads this user's profile row -- and, if one doesn't exist, creates it
+  // from the auth user's own metadata before giving up. A missing row here
+  // is always a symptom of something upstream: the sign-up flow's own
+  // profile insert can be silently rejected by RLS if it runs before the
+  // session is fully established (e.g. while email confirmation is
+  // pending), or the row can vanish if an account was deleted and the
+  // browser still holds a session for it. Either way, a signed-in user
+  // should never be permanently stuck with no profile, so this self-heals
+  // instead of surfacing a confusing "foreign key" error the next time the
+  // app tries to write anything tied to their profile.
+  const loadProfile = useCallback(async (userId, authUser) => {
     if (!userId) {
       setProfile(null)
       return
     }
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
-    if (!error) setProfile(data)
+      .maybeSingle()
+
+    if (!error && !data) {
+      const meta = authUser?.user_metadata || {}
+      const created = await supabase
+        .from('profiles')
+        .upsert({ id: userId, full_name: meta.full_name || null, email: authUser?.email || null, role: 'Patient' })
+        .select()
+        .single()
+      data = created.data
+      error = created.error
+      if (!error) await seedDemoDataIfNeeded(userId)
+    }
+
+    setProfile(error ? null : data)
   }, [])
 
   useEffect(() => {
@@ -28,13 +51,13 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return
       setSession(session)
-      loadProfile(session?.user?.id)
+      loadProfile(session?.user?.id, session?.user)
       setLoading(false)
     })
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      loadProfile(session?.user?.id)
+      loadProfile(session?.user?.id, session?.user)
     })
 
     return () => {

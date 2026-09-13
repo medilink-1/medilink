@@ -180,7 +180,15 @@ export default function PatientProfile() {
     const { error: pinError } = await supabase.rpc('create_emergency_qr_link', { p_pin: qrPin })
     setQrPinSaving(false)
     if (pinError) {
-      setQrPinError(pinError.message)
+      // A foreign-key error here means this session's profile row wasn't
+      // ready yet (e.g. right after sign-up, or a stale session from a
+      // recreated account) -- reloading re-syncs it via AuthContext's
+      // self-healing profile load, so a retry after that should succeed.
+      setQrPinError(
+        pinError.message.includes('foreign key')
+          ? 'Your account needs a quick refresh. Please reload the page and try again.'
+          : pinError.message
+      )
       return
     }
     setQrPin('')
