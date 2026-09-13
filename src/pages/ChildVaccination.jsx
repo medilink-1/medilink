@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle2, Clock, Loader2, Plus, UserRound, Syringe } from 'lucide-react'
+import { CheckCircle2, Clock, Loader2, Plus, UserRound, Syringe, Pencil, Trash2, Check, X } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { usePatientData } from '../lib/usePatientData'
@@ -17,6 +17,14 @@ export default function ChildVaccination() {
   const [openVaxFor, setOpenVaxFor] = useState(null)
   const [vaxForm, setVaxForm] = useState(emptyVaxForm)
   const [vaxSaving, setVaxSaving] = useState(false)
+
+  const [editingDepId, setEditingDepId] = useState(null)
+  const [editDepForm, setEditDepForm] = useState({ name: '', age: '', relationship: '' })
+  const [depRowSaving, setDepRowSaving] = useState(false)
+
+  const [editingVaxId, setEditingVaxId] = useState(null)
+  const [editVaxForm, setEditVaxForm] = useState(emptyVaxForm)
+  const [vaxRowSaving, setVaxRowSaving] = useState(false)
 
   const handleAddDependent = async (e) => {
     e.preventDefault()
@@ -42,6 +50,54 @@ export default function ChildVaccination() {
     setVaxForm(emptyVaxForm)
     setOpenVaxFor(null)
     p.reload()
+  }
+
+  function startEditDependent(dep) {
+    setEditingDepId(dep.id)
+    setEditDepForm({ name: dep.name || '', age: dep.age ?? '', relationship: dep.relationship || '' })
+  }
+
+  async function saveEditDependent(id) {
+    if (!editDepForm.name.trim()) return
+    setDepRowSaving(true)
+    await supabase.from('dependents').update({
+      name: editDepForm.name.trim(),
+      age: editDepForm.age === '' ? null : Number(editDepForm.age),
+      relationship: editDepForm.relationship || null,
+    }).eq('id', id)
+    setDepRowSaving(false)
+    setEditingDepId(null)
+    await p.reload()
+  }
+
+  async function deleteDependent(dep) {
+    if (!window.confirm(`Remove "${dep.name}" and all of their vaccination records? This cannot be undone.`)) return
+    await supabase.from('dependents').delete().eq('id', dep.id)
+    await p.reload()
+  }
+
+  function startEditVax(v) {
+    setEditingVaxId(v.id)
+    setEditVaxForm({ vaccine_name: v.vaccine_name || '', status: v.status || 'completed', event_date: v.event_date || '' })
+  }
+
+  async function saveEditVax(id) {
+    if (!editVaxForm.vaccine_name.trim()) return
+    setVaxRowSaving(true)
+    await supabase.from('vaccinations').update({
+      vaccine_name: editVaxForm.vaccine_name.trim(),
+      status: editVaxForm.status || 'completed',
+      event_date: editVaxForm.event_date || null,
+    }).eq('id', id)
+    setVaxRowSaving(false)
+    setEditingVaxId(null)
+    await p.reload()
+  }
+
+  async function deleteVax(v) {
+    if (!window.confirm(`Remove the "${v.vaccine_name}" vaccination record? This cannot be undone.`)) return
+    await supabase.from('vaccinations').delete().eq('id', v.id)
+    await p.reload()
   }
 
   if (p.loading) {
@@ -84,15 +140,42 @@ export default function ChildVaccination() {
             const vax = p.vaccinations.filter((v) => v.dependent_id === dep.id)
             return (
               <div key={dep.id}>
-                <div className="flex items-center gap-3">
-                  <span className="w-11 h-11 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
-                    <UserRound size={20} />
-                  </span>
-                  <div>
-                    <p className="font-bold text-ink-900">{dep.name}</p>
-                    <p className="text-sm text-slate-500">{dep.age} Years · {dep.relationship}</p>
+                {editingDepId === dep.id ? (
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); saveEditDependent(dep.id) }}
+                    className="flex items-center gap-2 border border-slate-100 rounded-2xl p-4 flex-wrap"
+                  >
+                    <input autoFocus required placeholder="Name" value={editDepForm.name} onChange={(e) => setEditDepForm({ ...editDepForm, name: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm" />
+                    <input type="number" placeholder="Age" value={editDepForm.age} onChange={(e) => setEditDepForm({ ...editDepForm, age: e.target.value })} className="w-24 rounded-lg border border-slate-200 px-3 py-1.5 text-sm" />
+                    <input placeholder="Relationship" value={editDepForm.relationship} onChange={(e) => setEditDepForm({ ...editDepForm, relationship: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm" />
+                    <button type="submit" disabled={depRowSaving} className="p-1.5 text-emerald-600 hover:text-emerald-700" title="Save">
+                      <Check size={16} />
+                    </button>
+                    <button type="button" onClick={() => setEditingDepId(null)} className="p-1.5 text-slate-400 hover:text-slate-600" title="Cancel">
+                      <X size={16} />
+                    </button>
+                  </form>
+                ) : (
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <span className="w-11 h-11 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
+                        <UserRound size={20} />
+                      </span>
+                      <div>
+                        <p className="font-bold text-ink-900">{dep.name}</p>
+                        <p className="text-sm text-slate-500">{dep.age} Years · {dep.relationship}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => startEditDependent(dep)} className="p-1.5 text-slate-400 hover:text-brand-600" title="Edit dependent">
+                        <Pencil size={14} />
+                      </button>
+                      <button type="button" onClick={() => deleteDependent(dep)} className="p-1.5 text-slate-400 hover:text-red-600" title="Remove dependent">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="mt-5 relative pl-8 border-l-2 border-brand-100 flex flex-col gap-5">
                   {vax.map((v) => (
@@ -100,18 +183,45 @@ export default function ChildVaccination() {
                       <span className={`absolute -left-[41px] top-0.5 w-4 h-4 rounded-full ring-4 ${
                         v.status === 'completed' ? 'bg-emerald-500 ring-emerald-50' : 'bg-amber-500 ring-amber-50'
                       }`} />
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-ink-900">{v.vaccine_name}</p>
-                        {v.status === 'completed' ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                            <CheckCircle2 size={12} /> Completed
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                            <Clock size={12} /> Due Soon
-                          </span>
-                        )}
-                      </div>
+                      {editingVaxId === v.id ? (
+                        <form
+                          onSubmit={(e) => { e.preventDefault(); saveEditVax(v.id) }}
+                          className="flex items-center gap-2 border border-slate-100 rounded-xl p-3 flex-wrap"
+                        >
+                          <input autoFocus required placeholder="Vaccine name" value={editVaxForm.vaccine_name} onChange={(e) => setEditVaxForm({ ...editVaxForm, vaccine_name: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm" />
+                          <input type="date" value={editVaxForm.event_date} onChange={(e) => setEditVaxForm({ ...editVaxForm, event_date: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm" />
+                          <select value={editVaxForm.status} onChange={(e) => setEditVaxForm({ ...editVaxForm, status: e.target.value })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm bg-white">
+                            <option value="completed">Completed</option>
+                            <option value="due_soon">Due Soon</option>
+                            <option value="scheduled">Scheduled</option>
+                          </select>
+                          <button type="submit" disabled={vaxRowSaving} className="p-1.5 text-emerald-600 hover:text-emerald-700" title="Save">
+                            <Check size={16} />
+                          </button>
+                          <button type="button" onClick={() => setEditingVaxId(null)} className="p-1.5 text-slate-400 hover:text-slate-600" title="Cancel">
+                            <X size={16} />
+                          </button>
+                        </form>
+                      ) : (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-ink-900">{v.vaccine_name}</p>
+                          {v.status === 'completed' ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                              <CheckCircle2 size={12} /> Completed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                              <Clock size={12} /> Due Soon
+                            </span>
+                          )}
+                          <button type="button" onClick={() => startEditVax(v)} className="p-1 text-slate-400 hover:text-brand-600" title="Edit">
+                            <Pencil size={13} />
+                          </button>
+                          <button type="button" onClick={() => deleteVax(v)} className="p-1 text-slate-400 hover:text-red-600" title="Delete">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {vax.length === 0 && <p className="text-sm text-slate-400">No vaccination records yet.</p>}
